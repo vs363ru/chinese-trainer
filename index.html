@@ -740,6 +740,7 @@ function listen(lang, onInterim) {
     rec = R;
     R.lang = lang; R.interimResults = true; R.maxAlternatives = 5; R.continuous = false;
     let finals = null, interim = '', error = null, done = false, quiet = null, guard = null;
+    try { navigator.permissions.query({ name: 'microphone' }).then(st => trace.unshift('доступ: ' + st.state), () => {}); } catch (e) { /* Permissions API нет */ }
     R.onstart = () => trace.push('старт');
     R.onaudiostart = () => { trace.push('звук'); S.micOk = true; };
     R.onspeechstart = () => trace.push('речь');
@@ -919,6 +920,14 @@ function startListening(byUser) {
   listen(lang, txt => { c.live = txt; const el = document.getElementById('live'); if (el) el.textContent = 'Слышу: ' + txt; }).then(res => {
     S.listening = null;
     if (S.card !== c || S.screen !== 'card') return;
+    if (res.error === 'aborted' && !res.alts.length && !c.abortRetried && c.phase === phase) {
+      // Safari иногда обрывает запись сразу после старта (например, после запроса доступа) — пробуем ещё раз сами
+      c.abortRetried = true;
+      c.fb = { kind: 'info', tag: 'Включаю микрофон ещё раз', lines: ['Safari оборвал запись. Говорите, когда появится «Говорите…».', '<span class="muted small">Микрофон: ' + esc((res.trace || []).join(' → ')) + '</span>'] };
+      render();
+      later(() => { if (S.card === c && !S.listening && c.phase === phase) startListening(true); }, 500);
+      return;
+    }
     if (res.error && !res.alts.length) {
       if (res.error === 'not-allowed' || res.error === 'service-not-allowed') {
         if (byUser || S.inFrame) {
