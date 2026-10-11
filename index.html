@@ -192,6 +192,40 @@ input[type="range"] { accent-color: var(--sel); }
 .startmenu li button svg { width: 24px; height: 24px; flex: none; }
 .startmenu hr { border: 0; border-top: 1px solid var(--sh); border-bottom: 1px solid var(--hi); margin: 3px 2px; }
 </style>
+<style>
+/* Фото-пазл находится под окнами тренажёра. */
+#puzzle-wallpaper { position: fixed; inset: 10px 0 52px; z-index: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; overflow: hidden; }
+#app .wrap { position: relative; z-index: 1; }
+.puzzle-art { position: relative; aspect-ratio: var(--photo-ratio); width: min(100%, calc((100dvh - 80px) * var(--photo-ratio))); flex: none; overflow: hidden; }
+.puzzle-art img, .puzzle-art svg { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
+.puzzle-art img { object-fit: contain; }
+.puzzle-piece { opacity: 1; transition: opacity .55s ease, transform .55s ease; transform-box: fill-box; transform-origin: center; }
+.puzzle-piece path { fill: #008080; stroke: #41a3a0; stroke-width: 1.5; }
+.puzzle-piece text { fill: #b3dfdc; font-family: var(--f-ui); font-weight: 700; }
+.puzzle-piece.is-open { opacity: 0; transform: translateY(6px) scale(.95); }
+.puzzle-controls { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 13px; }
+.puzzle-controls .btn { min-height: 36px; font-size: 13px; padding-inline: 10px; }
+.puzzle-choose { position: relative; cursor: pointer; overflow: hidden; }
+.puzzle-choose input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.puzzle-choose:focus-within { outline: 2px solid var(--sel); }
+.puzzle-controls button:disabled { color: var(--sh); cursor: default; }
+.puzzle-thumbnail { display: none; justify-content: center; background: #0b6464; box-shadow: var(--sunk); padding: 3px; }
+.puzzle-thumbnail .puzzle-art { width: min(100%, calc(148px * var(--photo-ratio))); }
+.puzzle-thumbnail .puzzle-piece { transition: none; }
+.puzzle-complete { margin: 0; color: var(--ok); font-weight: 700; font-size: 13px; }
+.puzzle-viewing #puzzle-wallpaper { width: 100%; inset: 114px 8px 52px; }
+.puzzle-viewing #puzzle-wallpaper .puzzle-art { width: min(100%, calc(var(--puzzle-height, calc(100dvh - 182px)) * var(--photo-ratio))); }
+.puzzle-viewing .wrap > .win { display: none; }
+.puzzle-viewing .puzzle-thumbnail { display: none; }
+.puzzle-viewing .puzzle-toolbar { position: fixed; top: max(10px, env(safe-area-inset-top)); left: 10px; right: 10px; max-width: 540px; margin: auto; z-index: 2; }
+@media (min-width: 940px) {
+  .has-puzzle #puzzle-wallpaper { width: 46%; padding: 16px; }
+  .has-puzzle #app .wrap { width: 52%; margin-left: 46%; margin-right: auto; }
+  .has-puzzle.puzzle-viewing #puzzle-wallpaper { width: 100%; }
+}
+@media (max-width: 939px) { .puzzle-thumbnail { display: flex; } }
+@media (prefers-reduced-motion: reduce) { .puzzle-piece { transition: none; } }
+</style>
 <!-- ARTIFACT:HEAD-END -->
 </head>
 <body>
@@ -639,6 +673,185 @@ if (!['after', 'always'].includes(S.set.meaning)) S.set.meaning = 'always';
 // Версия 2: перевод на карточке виден всегда (по просьбе пользователя); прежние настройки переводим один раз
 if ((S.set.v || 0) < 2) { S.set.meaning = 'always'; S.set.v = 2; save(KEY_SET, S.set); }
 if (S.set.v < 3) { if (!S.set.themes.includes('goods')) S.set.themes.push('goods'); S.set.v = 3; save(KEY_SET, S.set); }
+/* Фото-пазл: один принятый ответ открывает одну часть за уникальное слово. */
+const PUZZLE = { url: '', ratio: 0.75, total: S.set.roundSize, ids: [], opened: new Set(), order: [], viewing: false, photoName: '', note: '' };
+const puzzleRoot = document.createElement('div');
+puzzleRoot.id = 'puzzle-wallpaper';
+puzzleRoot.setAttribute('aria-hidden', 'true');
+document.body.prepend(puzzleRoot);
+
+function puzzleDb(action, file) {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) { reject(new Error('Хранилище недоступно')); return; }
+    const req = indexedDB.open('kv.photo-puzzle.v1', 1);
+    req.onupgradeneeded = () => req.result.createObjectStore('photo');
+    req.onerror = () => reject(req.error);
+    req.onsuccess = () => {
+      const db = req.result;
+      const tx = db.transaction('photo', action === 'get' ? 'readonly' : 'readwrite');
+      const store = tx.objectStore('photo');
+      const item = action === 'get' ? store.get('background') : action === 'delete' ? store.delete('background') : store.put(file, 'background');
+      let value;
+      item.onsuccess = () => { value = item.result; };
+      tx.oncomplete = () => { db.close(); resolve(value); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+      tx.onabort = () => { db.close(); reject(tx.error || new Error('Сохранение прервано')); };
+    };
+  });
+}
+
+async function puzzlePhoto(file, persist) {
+  if (!file || !/^image\/(jpeg|png|webp|gif|avif|heic|heif)$/.test(file.type)) {
+    PUZZLE.note = 'Выберите фотографию: JPG, PNG или другой формат изображения.';
+    render(); return;
+  }
+  if (file.size > 20 * 1024 * 1024) { PUZZLE.note = 'Выберите фотографию меньше 20 МБ.'; render(); return; }
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.src = url;
+  try {
+    await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
+  } catch (error) {
+    URL.revokeObjectURL(url);
+    PUZZLE.note = 'Браузер не смог открыть фото. Попробуйте сохранить его в JPG или PNG.';
+    render(); return;
+  }
+  if (PUZZLE.url) URL.revokeObjectURL(PUZZLE.url);
+  PUZZLE.url = url;
+  PUZZLE.ratio = img.naturalWidth / img.naturalHeight;
+  PUZZLE.photoName = file.name || 'фотография';
+  PUZZLE.note = persist ? 'Фотография добавлена. Теперь начните раунд — правильные слова будут открывать пазлы.' : '';
+  paintPuzzle(true);
+  render();
+  if (persist) {
+    try { await puzzleDb('put', file); }
+    catch (error) { PUZZLE.note = 'Фото доступно до закрытия страницы: браузер не разрешил сохранить его.'; render(); }
+  }
+}
+
+function startPuzzle() {
+  PUZZLE.ids = [...new Set(S.round.queue.map(item => item.id))];
+  PUZZLE.total = PUZZLE.ids.length;
+  PUZZLE.order = shuffle(Array.from({ length: PUZZLE.total }, (_, i) => i));
+  PUZZLE.opened = new Set();
+  PUZZLE.viewing = false;
+  PUZZLE.note = '';
+  paintPuzzle(true);
+}
+
+function openPuzzle(id) {
+  if (!PUZZLE.ids.includes(id) || PUZZLE.opened.has(id)) return;
+  PUZZLE.opened.add(id);
+  paintPuzzle(false);
+}
+
+function puzzleLayout() {
+  const total = Math.max(1, PUZZLE.total);
+  let cols = 1, rows = total, difference = Infinity;
+  for (let c = 1; c <= total; c++) {
+    if (total % c) continue;
+    const r = total / c;
+    const d = Math.abs(Math.log((c / r) / PUZZLE.ratio));
+    if (d < difference) { cols = c; rows = r; difference = d; }
+  }
+  return { cols, rows };
+}
+
+// Соседние края используют одну геометрию с обратным направлением.
+// Поэтому фигурные части закрывают фотографию целиком, без щелей.
+function puzzleEdge(x, y, dx, dy, bump, size) {
+  const length = Math.hypot(dx, dy);
+  const point = (t, n) => [x + dx * t + dy / length * n * size * bump, y + dy * t - dx / length * n * size * bump].map(v => v.toFixed(3)).join(' ');
+  if (!bump) return ' L ' + point(1, 0);
+  return ' L ' + point(.35, 0)
+    + ' C ' + point(.42, 0) + ' ' + point(.42, .04) + ' ' + point(.38, .06)
+    + ' C ' + point(.26, .23) + ' ' + point(.74, .23) + ' ' + point(.62, .06)
+    + ' C ' + point(.58, .04) + ' ' + point(.58, 0) + ' ' + point(.65, 0)
+    + ' L ' + point(1, 0);
+}
+
+function puzzleScene(thumbnail) {
+  const { cols, rows } = puzzleLayout();
+  const width = 1000, height = width / PUZZLE.ratio;
+  const w = width / cols, h = height / rows, size = Math.min(w, h);
+  const parity = (r, c) => (r + c) % 2 ? -1 : 1;
+  const open = new Set(PUZZLE.order.slice(0, PUZZLE.opened.size));
+  const pieces = [];
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const k = r * cols + c, x = c * w, y = r * h;
+    const d = 'M ' + x + ' ' + y
+      + puzzleEdge(x, y, w, 0, r ? parity(r, c) : 0, size)
+      + puzzleEdge(x + w, y, 0, h, c < cols - 1 ? parity(r, c + 1) : 0, size)
+      + puzzleEdge(x + w, y + h, -w, 0, r < rows - 1 ? -parity(r + 1, c) : 0, size)
+      + puzzleEdge(x, y + h, 0, -h, c ? -parity(r, c) : 0, size) + ' Z';
+    pieces.push('<g class="puzzle-piece' + (open.has(k) ? ' is-open' : '') + '" data-piece="' + k + '"><path d="' + d + '"></path><text x="' + (x + w / 2) + '" y="' + (y + h / 2) + '" dominant-baseline="middle" text-anchor="middle" font-size="' + Math.min(w, h) * .18 + '">' + (k + 1) + '</text></g>');
+  }
+  return '<div class="puzzle-art" style="--photo-ratio:' + PUZZLE.ratio + '"><img src="' + esc(PUZZLE.url) + '" alt="" draggable="false"><svg viewBox="0 0 ' + width + ' ' + height + '" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' + pieces.join('') + '</svg></div>';
+}
+
+function paintPuzzle(rebuild) {
+  document.body.classList.toggle('has-puzzle', !!PUZZLE.url);
+  document.body.classList.toggle('puzzle-viewing', PUZZLE.viewing && !!PUZZLE.url);
+  if (!PUZZLE.url) { puzzleRoot.innerHTML = ''; return; }
+  if (rebuild || !puzzleRoot.firstChild) puzzleRoot.innerHTML = puzzleScene(false);
+  const open = new Set(PUZZLE.order.slice(0, PUZZLE.opened.size));
+  document.querySelectorAll('.puzzle-piece').forEach(el => el.classList.toggle('is-open', open.has(+el.dataset.piece)));
+}
+
+function viewPuzzle() {
+  if (!['home', 'settings', 'card', 'summary'].includes(S.screen)) return '';
+  const count = PUZZLE.opened.size, total = S.round ? PUZZLE.total : S.set.roundSize;
+  const canView = !S.card || S.card.phase === 'result' || S.card.phase === 'reveal';
+  let inner = '<div class="puzzle-controls">'
+    + '<span role="status">' + (PUZZLE.url ? 'Открыто: <b>' + count + ' из ' + total + '</b>' : 'Правильное слово открывает часть фотографии.') + '</span>';
+  if (PUZZLE.url) inner += '<button type="button" class="btn" data-act="puzzle-view"' + (!canView ? ' disabled title="Фон можно посмотреть после ответа"' : '') + '>' + (PUZZLE.viewing ? 'Вернуться к словам' : 'Посмотреть фон') + '</button>';
+  if (S.screen !== 'card') inner += '<label class="btn primary puzzle-choose">' + (PUZZLE.url ? 'Сменить фото' : '＋ Добавить девушку') + '<input type="file" id="puzzle-photo" accept="image/*" aria-label="' + (PUZZLE.url ? 'Сменить фотографию девушки' : 'Добавить девушку: выбрать фотографию') + '"></label>'
+    + (PUZZLE.url ? '<button class="btn" data-act="puzzle-remove" type="button">Убрать фото</button>' : '');
+  inner += '</div>';
+  if (PUZZLE.url) {
+    inner += '<div class="puzzle-thumbnail" aria-hidden="true">' + puzzleScene(true) + '</div>';
+    if (total && count === total) inner += '<p class="puzzle-complete" role="status">Все ' + total + ' ' + plural(total, 'часть открыта', 'части открыты', 'частей открыты') + '! Фотография собрана.</p>';
+  } else inner += '<p class="muted small" style="margin:0">Нажмите «Добавить девушку» и выберите фотографию из галереи. В раунде на 10 слов будет 10 пазлов.</p>';
+  if (PUZZLE.url && S.screen !== 'card') inner += '<p class="muted small puzzle-filename" style="margin:0;overflow-wrap:anywhere">Добавлено: ' + esc(PUZZLE.photoName) + '</p>';
+  if (PUZZLE.note) inner += '<p class="note" role="status">' + esc(PUZZLE.note) + '</p>';
+  return '<aside class="puzzle-toolbar">' + win('Фото-пазл', inner) + '</aside>';
+}
+
+function puzzleView() {
+  if (!PUZZLE.url || (S.card && !['result', 'reveal'].includes(S.card.phase))) return;
+  PUZZLE.viewing = !PUZZLE.viewing;
+  // Просмотр после ответа останавливает автоматический переход на новое слово.
+  if (PUZZLE.viewing && S.card) clearTimers();
+  paintPuzzle(false);
+  render();
+}
+
+function fitPuzzleView() {
+  if (!PUZZLE.viewing) {
+    puzzleRoot.style.removeProperty('top');
+    puzzleRoot.style.removeProperty('--puzzle-height');
+    return;
+  }
+  const toolbar = document.querySelector('.puzzle-toolbar');
+  if (!toolbar) return;
+  const top = toolbar.getBoundingClientRect().bottom + 12;
+  puzzleRoot.style.top = top + 'px';
+  puzzleRoot.style.setProperty('--puzzle-height', 'calc(100dvh - ' + (top + 68) + 'px)');
+}
+window.addEventListener('resize', fitPuzzleView);
+
+async function puzzleRemove() {
+  if (PUZZLE.url) URL.revokeObjectURL(PUZZLE.url);
+  PUZZLE.url = ''; PUZZLE.viewing = false; PUZZLE.photoName = ''; PUZZLE.note = '';
+  paintPuzzle(true); render();
+  try { await puzzleDb('delete'); }
+  catch (error) { PUZZLE.note = 'Браузер не разрешил удалить сохранённое фото. Оно может появиться после перезагрузки.'; render(); }
+}
+
+// Фотография остаётся на устройстве; исходный файл не отправляется на сервер.
+puzzleDb('get').then(file => { if (file) puzzlePhoto(file, false); }).catch(() => {});
+
+
 function useVoice() { return !!SR && !S.micBlocked && S.set.input !== 'text'; }
 function P(id) { return S.prog[id] || null; }
 
@@ -869,6 +1082,7 @@ function curWord() { return BY_ID[curItem().id]; }
 function startRound(ids) {
   S.round = buildRound(ids);
   if (!S.round.queue.length) return;
+  startPuzzle();
   S.screen = 'card';
   wakeOn();
   startCard();
@@ -983,6 +1197,7 @@ function onPron(res) {
 function sayOk(res, manual) {
   const c = S.card, w = curWord();
   c.pron = 'ok'; c.phase = 'result'; c.reveal = true;
+  openPuzzle(curItem().id);
   finishCard(true);
   c.fb = { kind: manual ? 'info' : 'ok', tag: manual ? 'Засчитано вручную' : 'Верно', lines: [(res && res.heard ? 'Распознано: ' + zhSpan(res.heard) + '. ' : '') + zhSpan(w.h) + ' ' + pySpan(w.py)] };
   render();
@@ -1015,6 +1230,7 @@ function revealSay() {
 }
 function advanceAfterPron() {
   const c = S.card;
+  if (c.pron === 'ok') openPuzzle(curItem().id);
   const mode = curItem().mode;
   render();
   later(() => {
@@ -1172,6 +1388,7 @@ function next() {
   abortListening();
   S.round.idx++;
   if (S.round.idx >= S.round.queue.length) { S.screen = 'summary'; S.card = null; wakeOff(); render(); return; }
+  PUZZLE.viewing = false; paintPuzzle(false);
   startCard();
 }
 function submitTyped(value) {
@@ -1263,13 +1480,14 @@ function viewTaskbar() {
     + '<div class="task"><span class="seal" aria-hidden="true">汉</span><span>' + SCREEN_TITLE[S.screen] + '</span></div>'
     + '<div class="clock" id="clock">' + clockText() + '</div></div>' + menu;
 }
-function leaveCard() { clearTimers(); abortListening(); wakeOff(); S.card = null; }
+function leaveCard() { clearTimers(); abortListening(); wakeOff(); S.card = null; PUZZLE.viewing = false; paintPuzzle(false); }
 function render() {
   const app = document.getElementById('app');
   const html = S.screen === 'card' ? viewCard() : S.screen === 'summary' ? viewSummary() : S.screen === 'dict' ? viewDict() : S.screen === 'settings' ? viewSettings() : S.screen === 'help' ? viewHelp() : viewHome();
-  app.innerHTML = '<main class="wrap">' + html + '</main>' + viewTaskbar();
+  app.innerHTML = '<main class="wrap">' + viewPuzzle() + html + '</main>' + viewTaskbar();
   const inp = document.getElementById('typed');
   if (inp && !('ontouchstart' in window)) inp.focus();
+  fitPuzzleView();
 }
 
 function viewHome() {
@@ -1489,6 +1707,8 @@ document.addEventListener('click', e => {
   if (act !== 'startmenu') S.startOpen = false;
   if (S.set.beep) ensureAudio();
   switch (act) {
+    case 'puzzle-view': puzzleView(); break;
+    case 'puzzle-remove': puzzleRemove(); break;
     case 'startmenu': S.startOpen = !S.startOpen; render(); break;
     case 'closemenu': render(); break;
     case 'start': leaveCard(); startRound(); if (S.screen !== 'card') render(); break;
@@ -1568,6 +1788,7 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('change', e => {
   const t = e.target;
+  if (t.id === 'puzzle-photo') { if (t.files && t.files[0]) puzzlePhoto(t.files[0], true); return; }
   if (t.dataset.tog) { S.set[t.dataset.tog] = t.checked; save(KEY_SET, S.set); }
   if (t.dataset.sel) { S.set[t.dataset.sel] = t.value; save(KEY_SET, S.set); }
   if (t.dataset.range) { S.set[t.dataset.range] = +t.value; save(KEY_SET, S.set); }
@@ -1585,6 +1806,8 @@ document.addEventListener('submit', e => {
   if (v.trim()) submitTyped(v);
 });
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && PUZZLE.viewing) { puzzleView(); return; }
+  if (PUZZLE.viewing) return;
   if (e.key === 'Escape' && S.startOpen) { S.startOpen = false; render(); return; }
   if (S.screen !== 'card' || !S.card) return;
   if (e.target.closest('input, select, textarea')) return;
