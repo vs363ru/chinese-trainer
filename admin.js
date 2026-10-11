@@ -269,10 +269,16 @@
 
   function sizePhonePreview() {
     if (el('phone-preview').hidden) return;
+    const sizes = { '320x568': [320, 568], '375x667': [375, 667], '390x844': [390, 844] };
+    const [width, height] = sizes[el('phone-size').value] || sizes['375x667'];
     const space = el('phone-space').getBoundingClientRect();
-    const scale = Math.max(.1, Math.min(1, space.width / 375, space.height / 667));
-    el('device-frame').style.width = `${375 * scale}px`;
-    el('device-frame').style.height = `${667 * scale}px`;
+    const scale = Math.max(.1, Math.min(1, space.width / width, space.height / height));
+    el('trainer-preview').width = width;
+    el('trainer-preview').height = height;
+    el('trainer-preview').style.width = `${width}px`;
+    el('trainer-preview').style.height = `${height}px`;
+    el('device-frame').style.width = `${width * scale}px`;
+    el('device-frame').style.height = `${height * scale}px`;
     el('trainer-preview').style.transform = `scale(${scale})`;
   }
 
@@ -299,6 +305,7 @@
   el('remove-button').addEventListener('click', remove);
   el('preview-phone-button').addEventListener('click', showPhonePreview);
   el('preview-back-button').addEventListener('click', hidePhonePreview);
+  el('phone-size').addEventListener('change', sizePhonePreview);
   window.addEventListener('resize', sizePhonePreview);
   window.addEventListener('pagehide', () => lock());
   window.addEventListener('pageshow', event => { if (event.persisted) lock(); });
