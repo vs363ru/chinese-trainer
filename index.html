@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#ECF0ED">
+<meta name="theme-color" content="#008080">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Китайский">
 <link rel="manifest" href="manifest.webmanifest">
@@ -17,160 +17,174 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600&family=Noto+Serif+SC:wght@600;700&display=swap">
 <style>
-/* Макет: одна колонка до 560px; карточка слова — единственный выделенный объект, остальное тихое */
+/* Макет: рабочий стол Windows 95 — бирюзовый фон, серые окна с фаской, синие заголовки, панель задач с кнопкой «Пуск» */
 :root {
-  --paper: #ECF0ED;
-  --card: #F9FBF9;
-  --ink: #15201B;
-  --muted: #56655E;
-  --line: #CFD9D3;
-  --jade: #1D6B5A;
-  --jade-ink: #FFFFFF;
-  --jade-soft: #D2E7DF;
-  --ok: #1B7444;
-  --ok-soft: #DAEEE1;
-  --bad: #AE342A;
-  --bad-soft: #F6DED9;
-  --warn: #855B0C;
-  --warn-soft: #F3E7CC;
-  --t1: #CF2E29;
-  --t2: #26843A;
-  --t3: #2B60C4;
-  --t4: #8738B2;
-  --t0: #78837E;
+  --desk: #008080;
+  --face: #C0C0C0; --lt: #DFDFDF; --hi: #FFFFFF; --sh: #808080; --dk: #000000;
+  --title1: #000080; --title2: #1084D0; --title-fg: #FFFFFF;
+  --ink: #000000; --muted: #4A4A4A; --field: #FFFFFF; --sel: #000080; --sel-fg: #FFFFFF; --tip: #FFFF80;
+  --ok: #008000; --bad: #C00000; --warn: #9A5600; --info: #000080;
+  --ok-soft: #DDF0DD; --bad-soft: #F5D9D9; --warn-soft: #FFF2BF; --info-soft: #DCE4FF;
+  --t1: #E00000; --t2: #00A000; --t3: #0000FF; --t4: #A000A0; --t0: #808080;
   --f-hanzi: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
-  --f-ui: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --f-py: "Noto Sans", "Helvetica Neue", Arial, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --paper: #0E1412; --card: #161F1B; --ink: #E2EBE6; --muted: #93A29B; --line: #2B3732;
-    --jade: #5BBFA3; --jade-ink: #08130F; --jade-soft: #193A31;
-    --ok: #5CC78A; --ok-soft: #153123; --bad: #F0796D; --bad-soft: #3A1C19; --warn: #E2B45C; --warn-soft: #382C12;
-    --t1: #FF6B65; --t2: #5ACF6D; --t3: #74A0FF; --t4: #C98DF1; --t0: #8E9A95;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --paper: #0E1412; --card: #161F1B; --ink: #E2EBE6; --muted: #93A29B; --line: #2B3732;
-  --jade: #5BBFA3; --jade-ink: #08130F; --jade-soft: #193A31;
-  --ok: #5CC78A; --ok-soft: #153123; --bad: #F0796D; --bad-soft: #3A1C19; --warn: #E2B45C; --warn-soft: #382C12;
-  --t1: #FF6B65; --t2: #5ACF6D; --t3: #74A0FF; --t4: #C98DF1; --t0: #8E9A95;
-  color-scheme: dark;
+  --f-ui: Tahoma, Verdana, "MS Sans Serif", "Segoe UI", Arial, sans-serif;
+  --f-py: "Noto Sans", Verdana, Arial, sans-serif;
+  --raised: inset -1px -1px 0 var(--dk), inset 1px 1px 0 var(--hi), inset -2px -2px 0 var(--sh), inset 2px 2px 0 var(--lt);
+  --sunk: inset 1px 1px 0 var(--sh), inset -1px -1px 0 var(--hi), inset 2px 2px 0 var(--dk), inset -2px -2px 0 var(--lt);
+  --pressed: inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--hi), inset 2px 2px 0 var(--sh), inset -2px -2px 0 var(--lt);
+  color-scheme: light;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--paper); color: var(--ink); font: 16px/1.5 var(--f-ui); -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
-button, input, select { font: inherit; color: inherit; }
+body { margin: 0; background: var(--desk); color: var(--ink); font: 15px/1.45 var(--f-ui); -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
 button { cursor: pointer; }
-:focus-visible { outline: 3px solid var(--jade); outline-offset: 2px; }
-.wrap { max-width: 560px; margin: 0 auto; padding-inline: 16px; padding-block: 14px 48px; display: grid; gap: 18px; }
-.wrap > *, .card > *, .panel > * { min-width: 0; }
+:focus-visible { outline: 1px dotted var(--dk); outline-offset: -4px; }
+.wrap { max-width: 560px; margin: 0 auto; padding-inline: 10px; padding-block: 12px 72px; display: grid; gap: 14px; }
+.wrap > *, .card > *, .panel > *, .body > * { min-width: 0; }
 
-/* Шапка */
-.top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
-.seal { width: 44px; height: 44px; flex: none; border-radius: 10px; background: var(--jade); color: var(--jade-ink); display: grid; place-items: center; font: 700 26px/1 var(--f-hanzi); }
-.brand h1 { margin: 0; font-size: 20px; line-height: 1.2; font-weight: 700; text-wrap: balance; }
-.sub { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
-.iconbtn { width: 44px; height: 44px; flex: none; border-radius: 12px; border: 1px solid var(--line); background: var(--card); display: grid; place-items: center; }
-.iconbtn svg { width: 22px; height: 22px; }
+/* Окно */
+.win { background: var(--face); box-shadow: var(--raised); padding: 3px; }
+.titlebar { display: flex; align-items: center; gap: 6px; padding: 3px 3px 3px 6px; background: linear-gradient(90deg, var(--title1), var(--title2)); color: var(--title-fg); font-weight: 700; font-size: 15px; min-height: 28px; }
+.titlebar .tt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seal { width: 18px; height: 18px; flex: none; background: var(--field); color: var(--sel); display: grid; place-items: center; font: 700 13px/1 var(--f-hanzi); box-shadow: 1px 1px 0 var(--dk); }
+.tb { width: 24px; height: 22px; flex: none; border: 0; background: var(--face); box-shadow: var(--raised); color: var(--dk); font: 700 13px/1 var(--f-ui); display: grid; place-items: center; padding: 0 0 2px; }
+.tb.x { font-size: 15px; }
+.tb:active { box-shadow: var(--pressed); }
+.tb svg { width: 14px; height: 14px; }
+.menubar { display: flex; flex-wrap: wrap; padding: 1px 2px; border-bottom: 1px solid var(--sh); box-shadow: 0 1px 0 var(--hi); }
+.menubar button { border: 0; background: none; padding: 5px 9px; font-size: 14px; min-height: 32px; }
+.menubar button u { text-decoration: underline; }
+.menubar button:active, .menubar button[aria-current="true"] { background: var(--sel); color: var(--sel-fg); }
+.body { padding: 8px 8px 10px; display: grid; gap: 12px; }
 
 /* Общие элементы */
-h2 { margin: 0; font-size: 17px; font-weight: 600; }
+h2 { margin: 0; font-size: 14px; font-weight: 700; }
 .muted { color: var(--muted); }
-.small { font-size: 14px; }
-.btn { min-height: 46px; padding: 10px 18px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); font-weight: 500; font-size: 15px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-.btn.primary { background: var(--jade); border-color: var(--jade); color: var(--jade-ink); font-weight: 600; }
-.btn.big { min-height: 56px; font-size: 17px; width: 100%; }
-.btn.quiet { background: transparent; border-color: transparent; color: var(--muted); }
-.btn svg { width: 18px; height: 18px; }
+.small { font-size: 13px; }
+.btn { min-height: 38px; padding: 6px 16px; border: 0; background: var(--face); box-shadow: var(--raised); font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.btn:active { box-shadow: var(--pressed); padding: 7px 15px 5px 17px; }
+.btn.primary { font-weight: 700; outline: 1px solid var(--dk); outline-offset: 0; }
+.btn.big { min-height: 46px; font-size: 16px; width: 100%; }
+.btn.quiet { box-shadow: none; background: none; text-decoration: underline; color: var(--sel); }
+.btn.quiet:active { padding: 6px 16px; }
+.btn svg { width: 17px; height: 17px; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-.panel { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; gap: 12px; }
+.panel { position: relative; border: 2px groove var(--hi); padding: 16px 10px 10px; margin-top: 6px; display: grid; gap: 10px; }
+.panel > h2:first-child { position: absolute; top: -9px; left: 8px; background: var(--face); padding: 0 4px; font-size: 13px; font-weight: 700; }
 
 /* Главная */
-.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 2px; }
-.stat b { font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
-.stat span { font-size: 13px; color: var(--muted); }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .stats.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.ta { width: 100%; min-height: 72px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); font: 14px/1.4 var(--f-ui); resize: vertical; }
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.chip { min-height: 38px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-size: 14px; display: inline-flex; gap: 6px; align-items: center; }
-.chip em { font-style: normal; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; }
-.chip[aria-pressed="true"] { background: var(--jade-soft); border-color: var(--jade); }
-.chip[aria-pressed="true"] em { color: var(--ink); }
-.checks { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.checks li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; font-size: 14px; align-items: start; }
-.dot { width: 10px; height: 10px; border-radius: 50%; margin: 6px 0 0 6px; background: var(--muted); }
-.dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); } .dot.warn { background: var(--warn); }
-.howto { margin: 0; padding-left: 22px; display: grid; gap: 6px; font-size: 15px; }
-.note { background: var(--warn-soft); border-radius: 12px; padding: 10px 12px; font-size: 14px; }
-.note a { color: var(--ink); font-weight: 600; }
+.stat { background: var(--field); box-shadow: var(--sunk); padding: 8px 10px; display: grid; gap: 0; }
+.stat b { font-size: 24px; line-height: 1.1; color: var(--sel); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12px; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { min-height: 34px; padding: 4px 10px 4px 7px; border: 0; background: var(--face); box-shadow: var(--raised); font-size: 13px; display: inline-flex; gap: 7px; align-items: center; }
+.chip:active { box-shadow: var(--pressed); }
+.chip .cb { width: 13px; height: 13px; flex: none; background: var(--field); box-shadow: var(--sunk); display: grid; place-items: center; font: 700 11px/1 var(--f-ui); color: var(--dk); }
+.chip[aria-pressed="true"] .cb::before { content: "✓"; }
+.chip em { font-style: normal; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+.chip[aria-pressed="true"] em { color: var(--sel); }
+.checks { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.checks li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 6px; font-size: 13px; align-items: start; }
+.dot { width: 11px; height: 11px; margin: 4px 0 0 3px; background: var(--sh); box-shadow: inset 1px 1px 0 rgba(255,255,255,.55), 1px 1px 0 var(--dk); }
+.dot.ok { background: #00C000; } .dot.bad { background: #E00000; } .dot.warn { background: #FFD000; }
+.howto { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; }
+.note { background: var(--tip); border: 1px solid var(--dk); padding: 8px 10px; font-size: 13px; }
+.note a { color: var(--sel); font-weight: 700; }
 
 /* Карточка */
-.cardtop { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; }
-.bar { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
-.bar i { display: block; height: 100%; background: var(--jade); border-radius: 3px; transition: width .3s; }
-.count { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 18px 16px 22px; display: grid; gap: 16px; text-align: center; }
+.bar { height: 20px; background: var(--field); box-shadow: var(--sunk); padding: 3px; }
+.bar i { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--sel) 0 9px, transparent 9px 11px); transition: width .3s; }
+.count { font-variant-numeric: tabular-nums; font-size: 13px; }
+.cardtop { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.card { display: grid; gap: 14px; text-align: center; }
 .meta { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); }
-.badge { padding: 2px 10px; border-radius: 999px; background: var(--jade-soft); color: var(--ink); font-weight: 500; }
-.badge.new { background: var(--warn-soft); }
-.word { border: 0; background: none; padding: 4px; display: grid; gap: 4px; justify-items: center; border-radius: 14px; }
+.badge { padding: 2px 8px; background: var(--sel); color: var(--sel-fg); font-weight: 700; font-size: 12px; }
+.badge.new { background: var(--tip); color: var(--dk); border: 1px solid var(--dk); }
+.word { border: 0; background: var(--field); box-shadow: var(--sunk); padding: 14px 10px; width: 100%; display: grid; gap: 4px; justify-items: center; }
 .hz { font-family: var(--f-hanzi); font-weight: 700; font-size: clamp(64px, 21vw, 112px); line-height: 1.08; letter-spacing: .03em; }
-.hz.hidden { color: var(--muted); font-size: 48px; letter-spacing: .3em; }
+.hz.hidden { color: var(--sh); font-size: 48px; letter-spacing: .3em; }
 .py { font-family: var(--f-py); font-size: clamp(22px, 6.4vw, 30px); font-weight: 500; letter-spacing: .01em; }
 .s1 { color: var(--t1); } .s2 { color: var(--t2); } .s3 { color: var(--t3); } .s4 { color: var(--t4); } .s0 { color: var(--t0); }
-.meaning { font-size: 24px; font-weight: 600; line-height: 1.25; text-wrap: balance; }
-.meaning small { display: block; font-size: 14px; font-weight: 400; color: var(--muted); margin-top: 4px; }
-.steps { list-style: none; margin: 0; padding: 0; display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
-.steps li { font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
-.steps li.on { background: var(--jade); border-color: var(--jade); color: var(--jade-ink); }
-.steps li.done { border-color: var(--ok); color: var(--ok); }
-.prompt { font-size: 18px; font-weight: 600; }
-.mic { width: 92px; height: 92px; border-radius: 50%; border: 0; background: var(--jade); color: var(--jade-ink); display: grid; place-items: center; margin: 0 auto; position: relative; }
-.mic svg { width: 38px; height: 38px; }
-.mic.live::after { content: ""; position: absolute; inset: -9px; border-radius: 50%; border: 3px solid var(--jade); animation: pulse 1.1s ease-out infinite; }
+.meaning { font-size: 24px; font-weight: 700; line-height: 1.25; text-wrap: balance; }
+.meaning small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 4px; }
+.steps { list-style: none; margin: 0; padding: 3px; display: flex; justify-content: center; flex-wrap: wrap; gap: 2px; background: var(--field); box-shadow: var(--sunk); }
+.steps li { font-size: 13px; padding: 3px 10px; color: var(--muted); }
+.steps li.on { background: var(--sel); color: var(--sel-fg); }
+.steps li.done { color: var(--ok); }
+.steps li.done::before { content: "✓ "; }
+.prompt { font-size: 17px; font-weight: 700; }
+.mic { width: 92px; height: 92px; border: 0; background: var(--face); box-shadow: var(--raised); color: var(--dk); display: grid; place-items: center; margin: 0 auto; position: relative; }
+.mic svg { width: 40px; height: 40px; }
+.mic:active, .mic.live { box-shadow: var(--pressed); }
+.mic.live { color: #C00000; }
+.mic.live::after { content: ""; position: absolute; top: 8px; right: 8px; width: 11px; height: 11px; border-radius: 50%; background: #FF0000; box-shadow: 0 0 5px #FF0000; animation: blink 1s steps(2, start) infinite; }
 .mic:disabled { opacity: .45; cursor: default; }
-@keyframes pulse { from { transform: scale(.92); opacity: .9; } to { transform: scale(1.22); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .mic.live::after { animation: none; opacity: .6; } .bar i { transition: none; } }
-.live { min-height: 24px; font-size: 15px; color: var(--muted); overflow-wrap: anywhere; }
-.typed { display: flex; gap: 8px; }
-.typed input { flex: 1; width: 0; min-width: 0; min-height: 48px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); font-size: 17px; }
-.fb { border-radius: 14px; padding: 12px 14px; text-align: left; display: grid; gap: 4px; font-size: 15px; overflow-wrap: anywhere; }
-.fb.ok { background: var(--ok-soft); } .fb.bad { background: var(--bad-soft); } .fb.warn { background: var(--warn-soft); } .fb.info { background: var(--jade-soft); }
-.fb b.tag { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
-.fb.ok b.tag { color: var(--ok); } .fb.bad b.tag { color: var(--bad); } .fb.warn b.tag { color: var(--warn); } .fb.info b.tag { color: var(--jade); }
+@keyframes blink { to { visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .mic.live::after { animation: none; } .bar i { transition: none; } }
+.live { min-height: 22px; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.typed { display: flex; gap: 6px; }
+.typed input { flex: 1; width: 0; min-width: 0; min-height: 40px; padding: 6px 8px; border: 0; background: var(--field); box-shadow: var(--sunk); font-size: 16px; }
+.fb { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; padding: 10px; text-align: left; background: var(--face); box-shadow: var(--raised); font-size: 14px; overflow-wrap: anywhere; }
+.fb .ico { width: 32px; height: 32px; }
+.fb .ico svg { width: 32px; height: 32px; display: block; }
+.fb .txt { display: grid; gap: 4px; }
+.fb.ok { background: var(--ok-soft); } .fb.bad { background: var(--bad-soft); } .fb.warn { background: var(--warn-soft); } .fb.info { background: var(--info-soft); }
+.fb b.tag { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+.fb.ok b.tag { color: var(--ok); } .fb.bad b.tag { color: var(--bad); } .fb.warn b.tag { color: var(--warn); } .fb.info b.tag { color: var(--info); }
 .fb .zh { font-family: var(--f-hanzi); font-weight: 700; }
 .fb .pyi { font-family: var(--f-py); }
-.syls { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
-.syl { border-radius: 8px; padding: 2px 8px; font-family: var(--f-py); font-size: 15px; border: 1px solid var(--line); background: var(--card); }
-.syl.bad { border-color: var(--bad); }
 
 /* Итоги и словарь */
-.score { font-size: 44px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
-.list { display: grid; }
-.li { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px 4px; border: 0; border-bottom: 1px solid var(--line); background: none; text-align: left; width: 100%; }
+.score { font-size: 44px; font-weight: 700; color: var(--sel); font-variant-numeric: tabular-nums; line-height: 1; }
+.list { display: grid; background: var(--field); box-shadow: var(--sunk); padding: 3px; }
+.li { display: grid; grid-template-columns: 60px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 6px; border: 0; border-bottom: 1px dotted var(--sh); background: none; text-align: left; width: 100%; }
+.li:last-child { border-bottom: 0; }
+.li:active { background: var(--sel); color: var(--sel-fg); }
 .li .h { font-family: var(--f-hanzi); font-weight: 700; font-size: 26px; line-height: 1.1; }
 .li .p { font-family: var(--f-py); font-size: 15px; }
-.li .r { font-size: 14px; color: var(--muted); }
-.res { font-size: 13px; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.li .r { font-size: 13px; color: var(--muted); }
+.li:active .r { color: var(--sel-fg); }
+.res { font-size: 12px; padding: 2px 7px; white-space: nowrap; font-weight: 700; }
 .res.ok { background: var(--ok-soft); color: var(--ok); } .res.bad { background: var(--bad-soft); color: var(--bad); }
 .boxes { display: flex; gap: 3px; }
-.boxes i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); }
-.boxes i.on { background: var(--jade); }
-.group h2 { margin: 8px 0 2px; }
+.boxes i { width: 8px; height: 8px; background: var(--face); box-shadow: inset 1px 1px 0 var(--sh); }
+.boxes i.on { background: var(--sel); box-shadow: none; }
+.group h2 { margin: 10px 0 4px; }
 
 /* Настройки */
 .field { display: grid; gap: 6px; }
-.field label, .lab { font-weight: 500; font-size: 15px; }
-.field select, .field input[type="range"] { min-height: 44px; width: 100%; }
-.field select { padding: 8px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--paper); }
-.tog { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; font-size: 15px; min-height: 40px; }
-.tog input { width: 22px; height: 22px; accent-color: var(--jade); }
-.seg { display: flex; gap: 6px; flex-wrap: wrap; }
-.seg button { min-height: 40px; padding: 6px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); font-size: 14px; }
-.seg button[aria-pressed="true"] { background: var(--jade-soft); border-color: var(--jade); }
+.field label, .lab { font-weight: 700; font-size: 13px; }
+.field select, .field input[type="range"] { min-height: 40px; width: 100%; }
+.field select { padding: 6px 8px; border: 0; background: var(--field); box-shadow: var(--sunk); }
+input[type="range"] { accent-color: var(--sel); }
+.tog { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; font-size: 14px; min-height: 36px; }
+.tog input { appearance: none; -webkit-appearance: none; width: 18px; height: 18px; margin: 0; background: var(--field); box-shadow: var(--sunk); display: grid; place-items: center; }
+.tog input:checked::before { content: "✓"; font: 700 14px/1 var(--f-ui); color: var(--dk); }
+.seg { display: flex; gap: 4px; flex-wrap: wrap; }
+.seg button { min-height: 36px; padding: 5px 12px; border: 0; background: var(--face); box-shadow: var(--raised); font-size: 13px; }
+.seg button[aria-pressed="true"] { background: var(--lt); box-shadow: var(--pressed); font-weight: 700; }
+.ta { width: 100%; min-height: 72px; padding: 8px 10px; border: 0; background: var(--field); box-shadow: var(--sunk); font: 13px/1.4 var(--f-ui); resize: vertical; }
+
+/* Панель задач и меню «Пуск» */
+.taskbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--face); border-top: 1px solid var(--hi); box-shadow: 0 -1px 0 var(--sh); display: flex; gap: 5px; align-items: center; padding: 4px 5px; padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px)); }
+.start { height: 30px; border: 0; background: var(--face); box-shadow: var(--raised); font-weight: 700; font-size: 14px; padding: 0 9px 0 6px; display: flex; gap: 6px; align-items: center; flex: none; }
+.start:active, .start[aria-expanded="true"] { box-shadow: var(--pressed); }
+.flag { width: 16px; height: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 1px; transform: skewX(-8deg); }
+.flag i { display: block; }
+.flag i:nth-child(1) { background: #FF0000; } .flag i:nth-child(2) { background: #00C000; } .flag i:nth-child(3) { background: #0000FF; } .flag i:nth-child(4) { background: #FFD000; }
+.task { flex: 1; min-width: 0; height: 30px; box-shadow: var(--pressed); background: var(--lt); padding: 0 8px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.clock { height: 30px; flex: none; box-shadow: var(--sunk); background: var(--face); padding: 0 8px; display: flex; align-items: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+.scrim { position: fixed; inset: 0; z-index: 25; background: transparent; border: 0; padding: 0; }
+.startmenu { position: fixed; left: 5px; bottom: calc(42px + env(safe-area-inset-bottom, 0px)); z-index: 30; background: var(--face); box-shadow: var(--raised), 2px 2px 0 rgba(0,0,0,.4); display: grid; grid-template-columns: 26px minmax(0, 1fr); min-width: 230px; max-width: calc(100vw - 10px); padding: 3px; }
+.band { background: linear-gradient(180deg, var(--title2), var(--title1)); color: var(--face); writing-mode: vertical-rl; transform: rotate(180deg); font-weight: 700; font-size: 15px; padding: 8px 3px; letter-spacing: .06em; white-space: nowrap; }
+.band b { color: var(--hi); }
+.startmenu ul { list-style: none; margin: 0; padding: 2px 0; }
+.startmenu li button { width: 100%; text-align: left; border: 0; background: none; padding: 7px 14px 7px 10px; font-size: 15px; display: flex; gap: 10px; align-items: center; min-height: 42px; }
+.startmenu li button:active { background: var(--sel); color: var(--sel-fg); }
+.startmenu li button svg { width: 24px; height: 24px; flex: none; }
+.startmenu hr { border: 0; border-top: 1px solid var(--sh); border-bottom: 1px solid var(--hi); margin: 3px 2px; }
 </style>
 <!-- ARTIFACT:HEAD-END -->
 </head>
@@ -646,6 +660,7 @@ const S = {
   resetArm: false,
   note: '',
   backupText: '',
+  startOpen: false,
   inFrame: (() => { try { return window.self !== window.top; } catch (e) { return true; } })(),
 };
 S.set.themes = S.set.themes.filter(id => THEME_NAME[id]);
@@ -1150,13 +1165,52 @@ const ICON = {
   close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>',
 };
+// Значки окон сообщений и меню «Пуск» в духе Windows 95
+const WIN_ICON = {
+  info: '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#1084D0" stroke="#000"/><rect x="14" y="13" width="4" height="11" fill="#fff"/><circle cx="16" cy="9" r="2.2" fill="#fff"/></svg>',
+  warn: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 30 28H2z" fill="#FFD000" stroke="#000"/><rect x="14.5" y="11" width="3" height="9" fill="#000"/><circle cx="16" cy="24" r="1.8" fill="#000"/></svg>',
+  bad: '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#E00000" stroke="#000"/><path d="M10 10l12 12M22 10 10 22" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/></svg>',
+  ok: '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#00A000" stroke="#000"/><path d="M8 16.5l5.5 5.5L24 11" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+const MI = {
+  run: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="18" fill="#fff" stroke="#000"/><rect x="2" y="3" width="20" height="4" fill="#000080"/><path d="M9 10v8l7-4z" fill="#00A000"/></svg>',
+  home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8v10H3z" fill="#fff" stroke="#000"/><path d="M3 11 12 3l9 8" fill="none" stroke="#C00000" stroke-width="2"/><rect x="10" y="14" width="4" height="7" fill="#000080"/></svg>',
+  book: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h8v16H3z" fill="#fff" stroke="#000"/><path d="M13 4h8v16h-8z" fill="#fff" stroke="#000"/><path d="M11 4h2v16h-2z" fill="#800000"/><path d="M5 8h4M5 11h4M15 8h4M15 11h4" stroke="#000080"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="#808080" stroke="#000"/><circle cx="12" cy="12" r="3" fill="#fff" stroke="#000"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3" stroke="#000" stroke-width="2.5"/></svg>',
+  help: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#1084D0" stroke="#000"/><path d="M8.8 9.3a3.3 3.3 0 1 1 4.9 2.9c-1.1.6-1.7 1.3-1.7 2.6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="18" r="1.4" fill="#fff"/></svg>',
+};
 function esc(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
 function plural(n, one, few, many) { const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many; }
 
+function win(title, inner, opts) {
+  opts = opts || {};
+  return '<section class="win" aria-label="' + esc(title) + '"><div class="titlebar"><span class="seal" aria-hidden="true">汉</span><span class="tt">' + esc(title) + '</span>'
+    + '<span class="tb" aria-hidden="true">_</span><span class="tb" aria-hidden="true">□</span>'
+    + (opts.close ? '<button class="tb x" data-act="' + opts.close + '" aria-label="' + esc(opts.closeLabel || 'Закрыть') + '">×</button>' : '')
+    + '</div>' + (opts.menu ? '<div class="menubar">' + opts.menu + '</div>' : '') + '<div class="body">' + inner + '</div></section>';
+}
+const SCREEN_TITLE = { home: 'Китайский вслух', card: 'Раунд', summary: 'Итоги раунда', dict: 'Словарь', settings: 'Настройки', help: 'Справка' };
+function clockText() { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+setInterval(() => { const el = document.getElementById('clock'); if (el) el.textContent = clockText(); }, 15000);
+function viewTaskbar() {
+  const menu = S.startOpen
+    ? '<button class="scrim" data-act="closemenu" aria-label="Закрыть меню"></button>'
+      + '<nav class="startmenu" aria-label="Меню Пуск"><div class="band"><b>Китайский</b> 95</div><ul>'
+      + '<li><button data-act="menu-start">' + MI.run + 'Начать раунд</button></li><li><hr></li>'
+      + '<li><button data-act="menu-home">' + MI.home + 'Главная</button></li>'
+      + '<li><button data-act="dict">' + MI.book + 'Словарь</button></li>'
+      + '<li><button data-act="settings">' + MI.gear + 'Настройки</button></li>'
+      + '<li><button data-act="help">' + MI.help + 'Справка</button></li></ul></nav>'
+    : '';
+  return '<div class="taskbar"><button class="start" data-act="startmenu" aria-expanded="' + (S.startOpen ? 'true' : 'false') + '" aria-haspopup="menu"><span class="flag" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Пуск</button>'
+    + '<div class="task"><span class="seal" aria-hidden="true">汉</span><span>' + SCREEN_TITLE[S.screen] + '</span></div>'
+    + '<div class="clock" id="clock">' + clockText() + '</div></div>' + menu;
+}
+function leaveCard() { clearTimers(); abortListening(); wakeOff(); S.card = null; }
 function render() {
   const app = document.getElementById('app');
-  const html = S.screen === 'card' ? viewCard() : S.screen === 'summary' ? viewSummary() : S.screen === 'dict' ? viewDict() : S.screen === 'settings' ? viewSettings() : viewHome();
-  app.innerHTML = '<main class="wrap">' + html + '</main>';
+  const html = S.screen === 'card' ? viewCard() : S.screen === 'summary' ? viewSummary() : S.screen === 'dict' ? viewDict() : S.screen === 'settings' ? viewSettings() : S.screen === 'help' ? viewHelp() : viewHome();
+  app.innerHTML = '<main class="wrap">' + html + '</main>' + viewTaskbar();
   const inp = document.getElementById('typed');
   if (inp && !('ontouchstart' in window)) inp.focus();
 }
@@ -1169,7 +1223,7 @@ function viewHome() {
   const chips = THEMES.map(t => {
     const ws = WORDS.filter(w => w.t === t.id);
     const l = ws.filter(w => P(w.id) && P(w.id).box >= 3).length;
-    return '<button class="chip" data-act="theme" data-id="' + t.id + '" aria-pressed="' + S.set.themes.includes(t.id) + '">' + esc(t.name) + ' <em>' + l + '/' + ws.length + '</em></button>';
+    return '<button class="chip" data-act="theme" data-id="' + t.id + '" aria-pressed="' + S.set.themes.includes(t.id) + '"><i class="cb" aria-hidden="true"></i>' + esc(t.name) + ' <em>' + l + '/' + ws.length + '</em></button>';
   }).join('');
   const v = pickVoice();
   const ttsOk = !!window.speechSynthesis;
@@ -1202,24 +1256,34 @@ function viewHome() {
         + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="hard">Повторить трудные · ' + hard.length + '</button></div>' : '')
       + '</section>'
     : '';
-  return '<header class="top"><div class="brand"><span class="seal" aria-hidden="true">汉</span><div><h1>Китайский вслух</h1><p class="sub">' + total + ' базовых слов: слушать, повторять, переводить, говорить</p></div></div>'
-    + '<button class="iconbtn" data-act="settings" aria-label="Настройки">' + ICON.gear + '</button></header>'
+  const menu = '<button data-act="dict"><u>С</u>ловарь</button><button data-act="settings"><u>Н</u>астройки</button><button data-act="help">Спр<u>а</u>вка</button>';
+  const inner = '<p class="muted small" style="margin:0">' + total + ' базовых слов: слушать, повторять, переводить, говорить.</p>'
     + '<section class="stats" aria-label="Прогресс"><div class="stat"><b>' + learned + '</b><span>выучено</span></div><div class="stat"><b>' + inWork + '</b><span>в работе</span></div><div class="stat"><b>' + fresh + '</b><span>новых</span></div></section>'
     + '<section class="stats two" aria-label="Сегодня"><div class="stat"><b>' + due + '</b><span>к повторению сегодня</span></div><div class="stat"><b>' + sk + '</b><span>' + plural(sk, 'день', 'дня', 'дней') + ' подряд</span></div></section>'
     + '<section class="panel"><h2>Темы</h2><div class="chips">' + chips + '</div>'
-    + '<button class="btn primary big" data-act="start">Начать раунд · ' + N + ' ' + plural(N, 'слово', 'слова', 'слов') + '</button></section>'
+    + '<button class="btn primary big" data-act="start">' + ICON.play + ' Начать раунд · ' + N + ' ' + plural(N, 'слово', 'слова', 'слов') + '</button></section>'
     + weakPanel
     + frameNote
-    + '<section class="panel"><h2>Как проходит раунд</h2><ol class="howto">'
+    + '<section class="panel"><h2>Проверка устройства</h2><ul class="checks">' + checks.map(c => '<li><span class="dot ' + c[0] + '"></span><span>' + c[1] + '</span></li>').join('') + '</ul>'
+    + (useVoice() ? '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="mictest">' + ICON.mic + ' Проверить микрофон</button><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div>' : (ttsOk ? '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div>' : ''))
+    + '<p class="muted small" style="margin:0">Как проходит раунд и что умеет проверка — в разделе «Справка».</p></section>';
+  return win('Китайский вслух', inner, { menu });
+}
+function viewHelp() {
+  const inner = '<section class="panel"><h2>Как проходит раунд</h2><ol class="howto">'
     + '<li>Программа произносит слово по-китайски.</li>'
     + '<li>Вы повторяете. Она сверяет слоги и тоны и показывает, что прозвучало не так.</li>'
     + '<li>Вы говорите перевод по-русски. Она проверяет его.</li>'
     + '<li>Выученные слова (уровень 3+) идут наоборот: она называет перевод, вы говорите по-китайски.</li></ol>'
     + '<p class="muted small" style="margin:0">Новое слово сначала показывается с переводом, а спрашивается через пару карточек. Ошибки возвращаются в конце раунда, выученные слова — через 1, 3, 7 и 21 день. Направление можно изменить в настройках.</p></section>'
-    + '<section class="panel"><h2>Проверка устройства</h2><ul class="checks">' + checks.map(c => '<li><span class="dot ' + c[0] + '"></span><span>' + c[1] + '</span></li>').join('') + '</ul>'
-    + (useVoice() ? '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="mictest">' + ICON.mic + ' Проверить микрофон</button><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div>' : (ttsOk ? '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div>' : ''))
-    + '<p class="muted small" style="margin:0">Проверку делает распознавание речи браузера: оно определяет, какое слово вы сказали, но тон оценивает не так тонко, как преподаватель. Если уверены, что сказали верно, нажмите «Засчитать».</p></section>'
-    + '<div class="row"><button class="btn" data-act="dict">Словарь</button><button class="btn" data-act="settings">Настройки</button></div>';
+    + '<section class="panel"><h2>Проверка произношения</h2><p class="small" style="margin:0">Проверку делает распознавание речи браузера: оно определяет, какое слово вы сказали, но тон оценивает не так тонко, как преподаватель. Если уверены, что сказали верно, нажмите «Засчитать». Практический смысл проверки: понял бы вас китаец.</p></section>'
+    + '<section class="panel"><h2>Где работает голос</h2><ul class="checks">'
+    + '<li><span class="dot ok"></span><span>Компьютер и Android — Chrome. iPhone, iPad, Mac — Safari. Нужен интернет.</span></li>'
+    + '<li><span class="dot warn"></span><span>Режим блокировки на iPhone отключает озвучку и микрофон. Исключение для сайта: значок слева от адреса → «Настройки сайта» → «Режим блокировки» выкл.</span></li>'
+    + '<li><span class="dot warn"></span><span>Прогресс хранится в этом браузере. Раз в неделю копируйте его в Заметки: Настройки → «Резервная копия».</span></li></ul></section>'
+    + '<section class="panel"><h2>О программе</h2><p class="small" style="margin:0">Китайский вслух — ' + WORDS.length + ' базовых слов, ' + THEMES.length + ' тем. Повторение по интервалам, статистика слабых мест, обратный режим.</p></section>'
+    + '<div class="row"><button class="btn primary" data-act="home" style="min-width:120px">OK</button></div>';
+  return win('Справка', inner, { close: 'home' });
 }
 
 function viewCard() {
@@ -1234,7 +1298,7 @@ function viewCard() {
   const stepIdx = isRu ? (saying ? (c.attempts > 0 || S.listening ? 1 : 0) : 2) : c.phase === 'repeat' ? (S.speaking ? 0 : 1) : 2;
   const stepsHtml = steps.map((s, k) => '<li class="' + (k < stepIdx || c.phase === 'result' ? 'done' : k === stepIdx ? 'on' : '') + '">' + s + '</li>').join('');
   let area = '';
-  const fb = c.fb ? '<div class="fb ' + c.fb.kind + '" role="status"><b class="tag">' + esc(c.fb.tag) + '</b>' + c.fb.lines.map(l => '<div>' + l + '</div>').join('') + '</div>' : '';
+  const fb = c.fb ? '<div class="fb ' + c.fb.kind + '" role="status"><span class="ico">' + WIN_ICON[c.fb.kind] + '</span><div class="txt"><b class="tag">' + esc(c.fb.tag) + '</b>' + c.fb.lines.map(l => '<div>' + l + '</div>').join('') + '</div></div>' : '';
   const voice = useVoice();
   const micBtn = (label) => voice
     ? '<button class="mic' + (S.listening ? ' live' : '') + '" data-act="mic" aria-label="' + (S.listening ? 'Остановить запись' : label) + '">' + (S.listening ? ICON.stop : ICON.mic) + '</button>'
@@ -1271,9 +1335,9 @@ function viewCard() {
       + '<button class="btn primary" data-act="next">Дальше</button></div>';
   }
 
-  return '<header class="cardtop"><button class="iconbtn" data-act="quit" aria-label="Закончить раунд">' + ICON.close + '</button>'
+  return win('Карточка ' + (R.idx + 1) + ' из ' + R.queue.length, '<div class="cardtop">'
     + '<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>'
-    + '<span class="count">' + (R.idx + 1) + '/' + R.queue.length + '</span></header>'
+    + '<span class="count">' + pct + '%</span></div>'
     + '<section class="card">'
     + '<div class="meta"><span class="badge' + (isIntro ? ' new' : '') + '">' + (isIntro ? 'Новое слово' : item.mode === 'recall' ? 'Вспомните' : isRu ? 'По-китайски' : 'Повторение') + '</span><span>' + esc(THEME_NAME[w.t]) + '</span></div>'
     + '<button class="word" data-act="play" aria-label="Прослушать слово">'
@@ -1285,7 +1349,7 @@ function viewCard() {
       : '<div class="row"><button class="btn" data-act="play">' + ICON.play + ' Ещё раз</button><button class="btn" data-act="slow">Медленно</button></div>')
     + '<ol class="steps">' + stepsHtml + '</ol>'
     + area
-    + '</section>';
+    + '</section>', { close: 'quit', closeLabel: 'Закончить раунд' });
 }
 
 function viewSummary() {
@@ -1297,10 +1361,9 @@ function viewSummary() {
     return '<button class="li" data-act="say" data-id="' + esc(id) + '"><span class="h" lang="zh-CN">' + esc(w.h) + '</span><span><span class="p">' + pinyinHtml(w.s) + '</span><br><span class="r">' + esc(w.r[0]) + '</span></span>'
       + (R.first[id] ? '<span class="res ok">верно</span>' : R.final[id] ? '<span class="res ok">со 2-й попытки</span>' : '<span class="res bad">повторить</span>') + '</button>';
   }).join('');
-  return '<header class="top"><div class="brand"><span class="seal" aria-hidden="true">汉</span><div><h1>Раунд завершён</h1><p class="sub">Прогресс сохранён на этом устройстве</p></div></div></header>'
-    + '<section class="panel" style="text-align:center"><div class="score">' + ok + ' из ' + ids.length + '</div><div class="muted">' + plural(ok, 'слово', 'слова', 'слов') + ' с первого раза</div></section>'
+  return win('Раунд завершён', '<section class="panel" style="text-align:center"><h2>Результат</h2><div class="score">' + ok + ' из ' + ids.length + '</div><div class="muted small">' + plural(ok, 'слово', 'слова', 'слов') + ' с первого раза · прогресс сохранён</div></section>'
     + '<section class="list" aria-label="Слова раунда">' + rows + '</section>'
-    + '<div class="row"><button class="btn primary big" data-act="start">Ещё раунд</button><button class="btn" data-act="home">На главную</button></div>';
+    + '<div class="row"><button class="btn primary big" data-act="start">' + ICON.play + ' Ещё раунд</button><button class="btn" data-act="home">На главную</button></div>', { close: 'home' });
 }
 
 function viewDict() {
@@ -1312,7 +1375,7 @@ function viewDict() {
     }).join('');
     return '<section class="group"><h2>' + esc(t.name) + '</h2><div class="list">' + rows + '</div></section>';
   }).join('');
-  return '<header class="top"><div class="brand"><button class="iconbtn" data-act="home" aria-label="Назад">' + ICON.back + '</button><div><h1>Словарь</h1><p class="sub">Нажмите на слово, чтобы послушать</p></div></div></header>' + groups;
+  return win('Словарь', '<p class="muted small" style="margin:0">Нажмите на слово, чтобы послушать. Квадраты справа — уровень от 0 до 5.</p>' + groups, { close: 'home' });
 }
 
 function viewSettings() {
@@ -1323,43 +1386,49 @@ function viewSettings() {
   const voiceSel = vs.length
     ? '<div class="field"><label for="voice">Голос</label><select id="voice" data-sel="voiceURI"><option value="">Автовыбор</option>' + vs.map(v => '<option value="' + esc(v.voiceURI) + '"' + (v.voiceURI === s.voiceURI ? ' selected' : '') + '>' + esc(v.name) + '</option>').join('') + '</select></div>'
     : '<p class="muted small" style="margin:0">Китайские голоса в системе не найдены.</p>';
-  return '<header class="top"><div class="brand"><button class="iconbtn" data-act="home" aria-label="Назад">' + ICON.back + '</button><div><h1>Настройки</h1></div></div></header>'
-    + '<section class="panel"><span class="lab">Слов за раунд</span>' + seg('roundSize', [6, 10, 15, 20])
+  return win('Настройки', ''
+    + '<section class="panel"><h2>Раунд</h2><span class="lab">Слов за раунд</span>' + seg('roundSize', [6, 10, 15, 20])
     + '<span class="lab">Из них новых</span>' + seg('newPerRound', [2, 4, 6, 8]) + '</section>'
-    + '<section class="panel"><span class="lab">Направление</span>' + seg('direction', ['mix', 'zh', 'ru'], v => v === 'mix' ? 'Смешанно' : v === 'zh' ? 'Слушать → переводить' : 'Говорить по-китайски')
+    + '<section class="panel"><h2>Направление</h2>' + seg('direction', ['mix', 'zh', 'ru'], v => v === 'mix' ? 'Смешанно' : v === 'zh' ? 'Слушать → переводить' : 'Говорить по-китайски')
     + '<p class="muted small" style="margin:0">«Смешанно»: новые слова и слова в работе — слушать и переводить; выученные (уровень 3+) — программа называет перевод, а вы говорите по-китайски.</p></section>'
-    + '<section class="panel"><span class="lab">Ответы</span>' + seg('input', ['voice', 'text'], v => v === 'voice' ? 'Голосом' : 'С клавиатуры')
+    + '<section class="panel"><h2>Ответы</h2>' + seg('input', ['voice', 'text'], v => v === 'voice' ? 'Голосом' : 'С клавиатуры')
     + tog('autoMic', 'Микрофон включается сам после слова') + tog('autoNext', 'Переходить дальше после верного ответа') + tog('beep', 'Короткий сигнал, когда микрофон включился') + '</section>'
-    + '<section class="panel">' + tog('showHanzi', 'Показывать иероглифы') + tog('showPinyin', 'Показывать пиньинь')
+    + '<section class="panel"><h2>Показ</h2>' + tog('showHanzi', 'Показывать иероглифы') + tog('showPinyin', 'Показывать пиньинь')
     + '<p class="muted small" style="margin:0">Без иероглифов и пиньиня — тренировка только на слух.</p></section>'
-    + '<section class="panel"><div class="field"><label for="rate">Скорость речи: <span id="rateval">' + s.rate.toFixed(2) + '</span></label><input id="rate" type="range" min="0.5" max="1.1" step="0.05" value="' + s.rate + '" data-range="rate"></div>'
+    + '<section class="panel"><h2>Голос</h2><div class="field"><label for="rate">Скорость речи: <span id="rateval">' + s.rate.toFixed(2) + '</span></label><input id="rate" type="range" min="0.5" max="1.1" step="0.05" value="' + s.rate + '" data-range="rate"></div>'
     + voiceSel + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div></section>'
-    + '<section class="panel"><span class="lab">Резервная копия</span><p class="muted small" style="margin:0">Прогресс хранится в этом браузере. Safari может стереть данные сайта, если неделю им не пользоваться. Скопируйте прогресс в Заметки; чтобы вернуть его или перенести на другое устройство, вставьте текст в поле и нажмите «Восстановить».</p>'
+    + '<section class="panel"><h2>Резервная копия</h2><p class="muted small" style="margin:0">Прогресс хранится в этом браузере. Safari может стереть данные сайта, если неделю им не пользоваться. Скопируйте прогресс в Заметки; чтобы вернуть его или перенести на другое устройство, вставьте текст в поле и нажмите «Восстановить».</p>'
     + '<textarea id="backup" class="ta" rows="3" placeholder="Сюда вставьте сохранённый текст">' + esc(S.backupText) + '</textarea>'
     + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="backup">Скопировать прогресс</button><button class="btn" data-act="restore">Восстановить</button></div>'
     + (S.note ? '<p class="note">' + esc(S.note) + '</p>' : '') + '</section>'
-    + '<section class="panel"><span class="lab">Сброс</span>'
-    + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="reset">' + (S.resetArm ? 'Нажмите ещё раз, чтобы стереть' : 'Сбросить прогресс') + '</button></div></section>';
+    + '<section class="panel"><h2>Сброс</h2>'
+    + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="reset">' + (S.resetArm ? 'Нажмите ещё раз, чтобы стереть' : 'Сбросить прогресс') + '</button></div></section>'
+    + '<div class="row"><button class="btn primary" data-act="home" style="min-width:120px">OK</button></div>', { close: 'home' });
 }
 
 /* ---------- События ---------- */
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-act]');
   if (!b) return;
-  const act = b.dataset.act;
+  const act0 = b.dataset.act;
+  const act = act0 === 'menu-home' ? 'home' : act0 === 'menu-start' ? 'start' : act0;
   const c = S.card;
   if (act !== 'reset') S.resetArm = false;
   if (act !== 'backup' && act !== 'restore') S.note = '';
+  if (act !== 'startmenu') S.startOpen = false;
   if (S.set.beep) ensureAudio();
   switch (act) {
-    case 'start': startRound(); break;
-    case 'hard': startRound(hardWords().map(w => w.id)); break;
-    case 'home': clearTimers(); abortListening(); wakeOff(); S.screen = 'home'; S.card = null; render(); break;
+    case 'startmenu': S.startOpen = !S.startOpen; render(); break;
+    case 'closemenu': render(); break;
+    case 'start': leaveCard(); startRound(); if (S.screen !== 'card') render(); break;
+    case 'hard': leaveCard(); startRound(hardWords().map(w => w.id)); if (S.screen !== 'card') render(); break;
+    case 'home': leaveCard(); S.screen = 'home'; render(); break;
     case 'quit':
-      clearTimers(); abortListening(); wakeOff();
-      S.screen = S.round && S.round.order.length ? 'summary' : 'home'; S.card = null; render(); break;
-    case 'settings': S.screen = 'settings'; render(); break;
-    case 'dict': S.screen = 'dict'; render(); break;
+      leaveCard();
+      S.screen = S.round && S.round.order.length ? 'summary' : 'home'; render(); break;
+    case 'settings': leaveCard(); S.screen = 'settings'; render(); break;
+    case 'dict': leaveCard(); S.screen = 'dict'; render(); break;
+    case 'help': leaveCard(); S.screen = 'help'; render(); break;
     case 'theme': {
       const id = b.dataset.id, t = S.set.themes;
       S.set.themes = t.includes(id) ? (t.length > 1 ? t.filter(x => x !== id) : t) : [...t, id];
@@ -1444,6 +1513,7 @@ document.addEventListener('submit', e => {
   if (v.trim()) submitTyped(v);
 });
 document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && S.startOpen) { S.startOpen = false; render(); return; }
   if (S.screen !== 'card' || !S.card) return;
   if (e.target.closest('input, select, textarea')) return;
   if (e.key === ' ' || e.key === 'Enter') {
