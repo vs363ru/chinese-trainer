@@ -65,13 +65,18 @@
   <section id="phone-preview" class="phone-preview" hidden aria-label="Предпросмотр тренажёра на телефоне">
     <div class="phone-heading">
       <button id="preview-back-button" class="quiet" type="button">← Назад</button>
-      <span>375 × 667</span>
+      <select id="phone-size" aria-label="Размер экрана телефона">
+        <option value="320x568">320 × 568</option>
+        <option value="375x667" selected>375 × 667</option>
+        <option value="390x844">390 × 844</option>
+      </select>
     </div>
     <div class="phone-space" id="phone-space">
       <div class="device-frame" id="device-frame">
-        <iframe id="trainer-preview" title="Тренажёр: экран телефона" width="375" height="667"></iframe>
+        <iframe id="trainer-preview" title="Тренажёр: экран телефона" width="375" height="667" sandbox="allow-scripts allow-forms" allow="microphone 'none'; camera 'none'"></iframe>
       </div>
     </div>
+    <p class="phone-note">Изолированный предпросмотр: прогресс не сохраняется, микрофон недоступен.</p>
   </section>
 </body>
 </html>
