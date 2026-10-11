@@ -193,37 +193,111 @@ input[type="range"] { accent-color: var(--sel); }
 .startmenu hr { border: 0; border-top: 1px solid var(--sh); border-bottom: 1px solid var(--hi); margin: 3px 2px; }
 </style>
 <style>
-/* Фото-пазл находится под окнами тренажёра. */
-#puzzle-wallpaper { position: fixed; inset: 10px 0 52px; z-index: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; overflow: hidden; }
-#app .wrap { position: relative; z-index: 1; }
-.puzzle-art { position: relative; aspect-ratio: var(--photo-ratio); width: min(100%, calc((100dvh - 80px) * var(--photo-ratio))); flex: none; overflow: hidden; }
-.puzzle-art img, .puzzle-art svg { display: block; position: absolute; inset: 0; width: 100%; height: 100%; }
-.puzzle-art img { object-fit: contain; }
-.puzzle-piece { opacity: 1; transition: opacity .55s ease, transform .55s ease; transform-box: fill-box; transform-origin: center; }
-.puzzle-piece path { fill: #008080; stroke: #41a3a0; stroke-width: 1.5; }
-.puzzle-piece text { fill: #b3dfdc; font-family: var(--f-ui); font-weight: 700; }
-.puzzle-piece.is-open { opacity: 0; transform: translateY(6px) scale(.95); }
-.puzzle-controls { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 13px; }
-.puzzle-controls .btn { min-height: 36px; font-size: 13px; padding-inline: 10px; }
-.puzzle-choose { position: relative; cursor: pointer; overflow: hidden; }
-.puzzle-choose input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
-.puzzle-choose:focus-within { outline: 2px solid var(--sel); }
-.puzzle-controls button:disabled { color: var(--sh); cursor: default; }
-.puzzle-thumbnail { display: none; justify-content: center; background: #0b6464; box-shadow: var(--sunk); padding: 3px; }
-.puzzle-thumbnail .puzzle-art { width: min(100%, calc(148px * var(--photo-ratio))); }
-.puzzle-thumbnail .puzzle-piece { transition: none; }
-.puzzle-complete { margin: 0; color: var(--ok); font-weight: 700; font-size: 13px; }
-.puzzle-viewing #puzzle-wallpaper { width: 100%; inset: 114px 8px 52px; }
-.puzzle-viewing #puzzle-wallpaper .puzzle-art { width: min(100%, calc(var(--puzzle-height, calc(100dvh - 182px)) * var(--photo-ratio))); }
-.puzzle-viewing .wrap > .win { display: none; }
-.puzzle-viewing .puzzle-thumbnail { display: none; }
-.puzzle-viewing .puzzle-toolbar { position: fixed; top: max(10px, env(safe-area-inset-top)); left: 10px; right: 10px; max-width: 540px; margin: auto; z-index: 2; }
-@media (min-width: 940px) {
-  .has-puzzle #puzzle-wallpaper { width: 46%; padding: 16px; }
-  .has-puzzle #app .wrap { width: 52%; margin-left: 46%; margin-right: auto; }
-  .has-puzzle.puzzle-viewing #puzzle-wallpaper { width: 100%; }
+/* Одно окно в пределах видимой области, включая адресную строку и клавиатуру. */
+html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+body { padding: 0; }
+#app { height: var(--app-height, 100dvh); min-height: 0; }
+#app .wrap { height: calc(100% - 42px - env(safe-area-inset-bottom, 0px)); padding: max(4px, env(safe-area-inset-top, 0px)) 5px 5px; gap: 0; }
+.wrap > .win { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
+.win > .titlebar, .win > .menubar { flex: none; }
+.win > .body { position: relative; isolation: isolate; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 8px; overflow: hidden; }
+.body > * { flex: none; }
+.page-content { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.page-content > * { flex: none; }
+.page-nav { display: flex; align-items: center; justify-content: space-between; gap: 6px; flex: none; min-height: 38px; }
+.page-nav .btn { min-height: 38px; padding-inline: 12px; }
+.page-nav span { font-size: 12px; text-align: center; }
+.page-nav button:disabled { opacity: .5; cursor: default; }
+.home-start { flex: none; }
+.page-content p { margin-block: 0; }
+.cardtop { flex: none; }
+.card { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 7px; }
+.card > * { flex: none; }
+.card .word { flex: 1; min-height: 90px; padding: 8px; align-content: center; }
+.card .hz { font-size: clamp(38px, 13vw, 82px); }
+.card .hz.hidden { font-size: 34px; }
+.card .py { font-size: clamp(18px, 5vw, 26px); }
+.card .mean { font-size: 20px; margin-top: 3px; padding-top: 3px; }
+.card .mean small, .card .meaning small { font-size: 11px; }
+.card .mean.hid { font-size: 12px; }
+.answer-area { display: grid; gap: 6px; }
+.card .prompt { font-size: 14px; }
+.card .mic { width: 64px; height: 64px; }
+.card .mic svg { width: 29px; height: 29px; }
+.card .live { font-size: 12px; min-height: 18px; }
+.card .btn { min-height: 36px; padding: 5px 11px; font-size: 13px; }
+.card .row { gap: 5px; }
+.card .steps li { font-size: 11px; padding: 2px 6px; }
+.card .fb { padding: 6px; gap: 6px; font-size: 12px; grid-template-columns: 24px minmax(0, 1fr); }
+.card .fb .ico, .card .fb .ico svg { width: 24px; height: 24px; }
+.card .fb b.tag { font-size: 11px; }
+.card .fb .txt { gap: 2px; }
+.puzzle-backdrop { position: absolute; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.puzzle-art, .puzzle-art img, .puzzle-art svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.puzzle-art img { object-fit: cover; }
+.puzzle-piece { opacity: 1; transition: opacity .55s ease; }
+.puzzle-piece path { fill: #c0c0c0; stroke: #999; stroke-width: 1.5; }
+.puzzle-piece text { fill: #777; font-family: var(--f-ui); font-weight: 700; }
+.puzzle-piece.is-open { opacity: 0; }
+.puzzle-body .word { background: transparent; box-shadow: none; }
+.puzzle-body .hz, .puzzle-body .py { text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff; }
+.puzzle-body .mean, .puzzle-body .meta, .puzzle-body .prompt, .puzzle-body .live { background: rgba(255,255,255,.86); padding: 2px 5px; border-radius: 2px; }
+.puzzle-body .word .mean { width: auto; border: 0; }
+.puzzle-status { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 12px; flex: none; }
+.puzzle-status span { background: rgba(255,255,255,.9); padding: 2px 5px; }
+.puzzle-status .btn { min-height: 30px; font-size: 12px; padding: 3px 9px; }
+.puzzle-viewing .puzzle-body > :not(.puzzle-backdrop):not(.puzzle-status) { display: none; }
+
+.keyboard-open .card .word { min-height: 40px; grid-template-columns: 1fr 1fr; gap: 1px; }
+.keyboard-open .card .hz { font-size: 28px; }
+.keyboard-open .card .py { font-size: 16px; }
+.keyboard-open .card .mean { grid-column: 1 / -1; font-size: 14px; }
+.keyboard-open .card .mean small, .keyboard-open .card .steps, .keyboard-open .card .meta, .keyboard-open .card > .row, .keyboard-open .puzzle-status { display: none; }
+.keyboard-open .card .fb { font-size: 11px; }
+.card .hz { font-size: min(82px, 13vw, calc((100vw - 48px) / var(--hz-count, 2))); }
+.card.card-compact { gap: 4px; }
+.card-compact .word { min-height: 64px; }
+.card-compact .hz { font-size: min(42px, calc((100vw - 48px) / var(--hz-count, 2))); }
+.card-compact .py { font-size: 18px; }
+.card-compact .mean { font-size: 16px; }
+.card-compact .mean small, .card-compact .steps { display: none; }
+.card-compact .mic { width: 48px; height: 48px; }
+.card-compact .btn { min-height: 30px; padding: 3px 7px; font-size: 12px; }
+.card-compact .fb { font-size: 11px; padding: 4px; }
+.card-compact .answer-area { gap: 4px; }
+.card-tight .meta, .card-tight .live { display: none; }
+.card-tight .word { min-height: 50px; padding: 2px; }
+.card-tight .hz { font-size: min(34px, calc((100vw - 48px) / var(--hz-count, 2))); }
+.card-tight .py { font-size: 16px; }
+.card-tight .mean { font-size: 14px; }
+.card-tight .prompt { font-size: 12px; }
+.card .detail-btn { min-height: 26px; padding: 2px 5px; justify-self: start; }
+@media (max-height: 700px) { .card .steps { display: none; } }
+/* Просмотр показывает только уже открытые участки; картинка не раскрывается кнопкой. */
+.puzzle-viewing .puzzle-body .puzzle-art svg { display: block; }
+@media (max-height: 700px) {
+  .titlebar { font-size: 13px; min-height: 25px; }
+  .win > .body { gap: 5px; padding: 6px; }
+  .card { gap: 5px; }
+  .card .hz { font-size: clamp(34px, 12vw, 64px); }
+  .card .py { font-size: 20px; }
+  .card .mean { font-size: 17px; }
+  .card .mic { width: 52px; height: 52px; }
+  .card .mic svg { width: 24px; height: 24px; }
+  .card .fb { font-size: 11px; }
+  .card .btn, .typed input { min-height: 34px; }
+  .card .live { font-size: 11px; }
 }
-@media (max-width: 939px) { .puzzle-thumbnail { display: flex; } }
+@media (max-height: 480px) {
+  .card .word { min-height: 45px; grid-template-columns: 1fr 1fr; gap: 2px; }
+  .card .mean { grid-column: 1 / -1; font-size: 14px; }
+  .card .hz { font-size: 34px; }
+  .card .py { font-size: 17px; }
+  .card .mean small { display: none; }
+  .card .steps, .card .meta, .card .live { display: none; }
+  .answer-area { gap: 3px; }
+  .card .mic { width: 44px; height: 44px; }
+}
 @media (prefers-reduced-motion: reduce) { .puzzle-piece { transition: none; } }
 </style>
 <!-- ARTIFACT:HEAD-END -->
@@ -674,60 +748,17 @@ if (!['after', 'always'].includes(S.set.meaning)) S.set.meaning = 'always';
 if ((S.set.v || 0) < 2) { S.set.meaning = 'always'; S.set.v = 2; save(KEY_SET, S.set); }
 if (S.set.v < 3) { if (!S.set.themes.includes('goods')) S.set.themes.push('goods'); S.set.v = 3; save(KEY_SET, S.set); }
 /* Фото-пазл: один принятый ответ открывает одну часть за уникальное слово. */
-const PUZZLE = { url: '', ratio: 0.75, total: S.set.roundSize, ids: [], opened: new Set(), order: [], viewing: false, photoName: '', note: '' };
-const puzzleRoot = document.createElement('div');
-puzzleRoot.id = 'puzzle-wallpaper';
-puzzleRoot.setAttribute('aria-hidden', 'true');
-document.body.prepend(puzzleRoot);
-
-function puzzleDb(action, file) {
-  return new Promise((resolve, reject) => {
-    if (!window.indexedDB) { reject(new Error('Хранилище недоступно')); return; }
-    const req = indexedDB.open('kv.photo-puzzle.v1', 1);
-    req.onupgradeneeded = () => req.result.createObjectStore('photo');
-    req.onerror = () => reject(req.error);
-    req.onsuccess = () => {
-      const db = req.result;
-      const tx = db.transaction('photo', action === 'get' ? 'readonly' : 'readwrite');
-      const store = tx.objectStore('photo');
-      const item = action === 'get' ? store.get('background') : action === 'delete' ? store.delete('background') : store.put(file, 'background');
-      let value;
-      item.onsuccess = () => { value = item.result; };
-      tx.oncomplete = () => { db.close(); resolve(value); };
-      tx.onerror = () => { db.close(); reject(tx.error); };
-      tx.onabort = () => { db.close(); reject(tx.error || new Error('Сохранение прервано')); };
-    };
-  });
-}
-
-async function puzzlePhoto(file, persist) {
-  if (!file || !/^image\/(jpeg|png|webp|gif|avif|heic|heif)$/.test(file.type)) {
-    PUZZLE.note = 'Выберите фотографию: JPG, PNG или другой формат изображения.';
-    render(); return;
-  }
-  if (file.size > 20 * 1024 * 1024) { PUZZLE.note = 'Выберите фотографию меньше 20 МБ.'; render(); return; }
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.src = url;
-  try {
-    await new Promise((resolve, reject) => { img.onload = resolve; img.onerror = reject; });
-  } catch (error) {
-    URL.revokeObjectURL(url);
-    PUZZLE.note = 'Браузер не смог открыть фото. Попробуйте сохранить его в JPG или PNG.';
-    render(); return;
-  }
-  if (PUZZLE.url) URL.revokeObjectURL(PUZZLE.url);
-  PUZZLE.url = url;
-  PUZZLE.ratio = img.naturalWidth / img.naturalHeight;
-  PUZZLE.photoName = file.name || 'фотография';
-  PUZZLE.note = persist ? 'Фотография добавлена. Теперь начните раунд — правильные слова будут открывать пазлы.' : '';
-  paintPuzzle(true);
+const PUZZLE = { url: '', ratio: .75, total: S.set.roundSize, ids: [], opened: new Set(), order: [], viewing: false };
+const UI_PAGES = {};
+// Общую фотографию публикует владелец через GitHub. Локальной загрузки у посетителей нет.
+const sharedPhoto = new Image();
+sharedPhoto.onload = () => {
+  PUZZLE.url = sharedPhoto.src;
+  PUZZLE.ratio = sharedPhoto.naturalWidth / sharedPhoto.naturalHeight;
   render();
-  if (persist) {
-    try { await puzzleDb('put', file); }
-    catch (error) { PUZZLE.note = 'Фото доступно до закрытия страницы: браузер не разрешил сохранить его.'; render(); }
-  }
-}
+};
+sharedPhoto.onerror = () => {};
+sharedPhoto.src = 'images/reward.jpg';
 
 function startPuzzle() {
   PUZZLE.ids = [...new Set(S.round.queue.map(item => item.id))];
@@ -735,7 +766,6 @@ function startPuzzle() {
   PUZZLE.order = shuffle(Array.from({ length: PUZZLE.total }, (_, i) => i));
   PUZZLE.opened = new Set();
   PUZZLE.viewing = false;
-  PUZZLE.note = '';
   paintPuzzle(true);
 }
 
@@ -770,7 +800,7 @@ function puzzleEdge(x, y, dx, dy, bump, size) {
     + ' L ' + point(1, 0);
 }
 
-function puzzleScene(thumbnail) {
+function puzzleScene() {
   const { cols, rows } = puzzleLayout();
   const width = 1000, height = width / PUZZLE.ratio;
   const w = width / cols, h = height / rows, size = Math.min(w, h);
@@ -786,71 +816,35 @@ function puzzleScene(thumbnail) {
       + puzzleEdge(x, y + h, 0, -h, c ? -parity(r, c) : 0, size) + ' Z';
     pieces.push('<g class="puzzle-piece' + (open.has(k) ? ' is-open' : '') + '" data-piece="' + k + '"><path d="' + d + '"></path><text x="' + (x + w / 2) + '" y="' + (y + h / 2) + '" dominant-baseline="middle" text-anchor="middle" font-size="' + Math.min(w, h) * .18 + '">' + (k + 1) + '</text></g>');
   }
-  return '<div class="puzzle-art" style="--photo-ratio:' + PUZZLE.ratio + '"><img src="' + esc(PUZZLE.url) + '" alt="" draggable="false"><svg viewBox="0 0 ' + width + ' ' + height + '" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' + pieces.join('') + '</svg></div>';
+  return '<div class="puzzle-art"><img src="' + esc(PUZZLE.url) + '" alt="" draggable="false"><svg preserveAspectRatio="none" viewBox="0 0 ' + width + ' ' + height + '" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' + pieces.join('') + '</svg></div>';
 }
 
-function paintPuzzle(rebuild) {
-  document.body.classList.toggle('has-puzzle', !!PUZZLE.url);
+function paintPuzzle() {
   document.body.classList.toggle('puzzle-viewing', PUZZLE.viewing && !!PUZZLE.url);
-  if (!PUZZLE.url) { puzzleRoot.innerHTML = ''; return; }
-  if (rebuild || !puzzleRoot.firstChild) puzzleRoot.innerHTML = puzzleScene(false);
   const open = new Set(PUZZLE.order.slice(0, PUZZLE.opened.size));
   document.querySelectorAll('.puzzle-piece').forEach(el => el.classList.toggle('is-open', open.has(+el.dataset.piece)));
 }
-
 function viewPuzzle() {
-  if (!['home', 'settings', 'card', 'summary'].includes(S.screen)) return '';
+  if (!PUZZLE.url) return '';
   const count = PUZZLE.opened.size, total = S.round ? PUZZLE.total : S.set.roundSize;
-  const canView = !S.card || S.card.phase === 'result' || S.card.phase === 'reveal';
-  let inner = '<div class="puzzle-controls">'
-    + '<span role="status">' + (PUZZLE.url ? 'Открыто: <b>' + count + ' из ' + total + '</b>' : 'Правильное слово открывает часть фотографии.') + '</span>';
-  if (PUZZLE.url) inner += '<button type="button" class="btn" data-act="puzzle-view"' + (!canView ? ' disabled title="Фон можно посмотреть после ответа"' : '') + '>' + (PUZZLE.viewing ? 'Вернуться к словам' : 'Посмотреть фон') + '</button>';
-  if (S.screen !== 'card') inner += '<label class="btn primary puzzle-choose">' + (PUZZLE.url ? 'Сменить фото' : '＋ Добавить девушку') + '<input type="file" id="puzzle-photo" accept="image/*" aria-label="' + (PUZZLE.url ? 'Сменить фотографию девушки' : 'Добавить девушку: выбрать фотографию') + '"></label>'
-    + (PUZZLE.url ? '<button class="btn" data-act="puzzle-remove" type="button">Убрать фото</button>' : '');
-  inner += '</div>';
-  if (PUZZLE.url) {
-    inner += '<div class="puzzle-thumbnail" aria-hidden="true">' + puzzleScene(true) + '</div>';
-    if (total && count === total) inner += '<p class="puzzle-complete" role="status">Все ' + total + ' ' + plural(total, 'часть открыта', 'части открыты', 'частей открыты') + '! Фотография собрана.</p>';
-  } else inner += '<p class="muted small" style="margin:0">Нажмите «Добавить девушку» и выберите фотографию из галереи. В раунде на 10 слов будет 10 пазлов.</p>';
-  if (PUZZLE.url && S.screen !== 'card') inner += '<p class="muted small puzzle-filename" style="margin:0;overflow-wrap:anywhere">Добавлено: ' + esc(PUZZLE.photoName) + '</p>';
-  if (PUZZLE.note) inner += '<p class="note" role="status">' + esc(PUZZLE.note) + '</p>';
-  return '<aside class="puzzle-toolbar">' + win('Фото-пазл', inner) + '</aside>';
+  const canView = !S.card || ['result', 'reveal'].includes(S.card.phase);
+  return '<div class="puzzle-status"><span role="status">' + (count === total ? 'Фотография собрана! ' : 'Пазлы: ') + '<b>' + count + ' из ' + total + '</b></span>'
+    + '<button type="button" class="btn" data-act="puzzle-view"' + (canView ? '' : ' disabled') + '>' + (PUZZLE.viewing ? 'Вернуться к словам' : 'Посмотреть фон') + '</button></div>';
 }
-
 function puzzleView() {
   if (!PUZZLE.url || (S.card && !['result', 'reveal'].includes(S.card.phase))) return;
   PUZZLE.viewing = !PUZZLE.viewing;
-  // Просмотр после ответа останавливает автоматический переход на новое слово.
   if (PUZZLE.viewing && S.card) clearTimers();
-  paintPuzzle(false);
   render();
 }
-
-function fitPuzzleView() {
-  if (!PUZZLE.viewing) {
-    puzzleRoot.style.removeProperty('top');
-    puzzleRoot.style.removeProperty('--puzzle-height');
-    return;
-  }
-  const toolbar = document.querySelector('.puzzle-toolbar');
-  if (!toolbar) return;
-  const top = toolbar.getBoundingClientRect().bottom + 12;
-  puzzleRoot.style.top = top + 'px';
-  puzzleRoot.style.setProperty('--puzzle-height', 'calc(100dvh - ' + (top + 68) + 'px)');
+function fitViewport() {
+  const height = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  if (height) document.documentElement.style.setProperty('--app-height', height + 'px');
+  document.body.classList.toggle('keyboard-open', !!window.visualViewport && height < window.innerHeight * .75);
+  fitCard();
 }
-window.addEventListener('resize', fitPuzzleView);
-
-async function puzzleRemove() {
-  if (PUZZLE.url) URL.revokeObjectURL(PUZZLE.url);
-  PUZZLE.url = ''; PUZZLE.viewing = false; PUZZLE.photoName = ''; PUZZLE.note = '';
-  paintPuzzle(true); render();
-  try { await puzzleDb('delete'); }
-  catch (error) { PUZZLE.note = 'Браузер не разрешил удалить сохранённое фото. Оно может появиться после перезагрузки.'; render(); }
-}
-
-// Фотография остаётся на устройстве; исходный файл не отправляется на сервер.
-puzzleDb('get').then(file => { if (file) puzzlePhoto(file, false); }).catch(() => {});
-
+window.addEventListener('resize', () => { fitViewport(); if (!document.activeElement || !document.activeElement.matches('input, textarea, select')) render(); });
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fitViewport);
 
 function useVoice() { return !!SR && !S.micBlocked && S.set.input !== 'text'; }
 function P(id) { return S.prog[id] || null; }
@@ -1461,9 +1455,9 @@ function win(title, inner, opts) {
   return '<section class="win" aria-label="' + esc(title) + '"><div class="titlebar"><span class="seal" aria-hidden="true">汉</span><span class="tt">' + esc(title) + '</span>'
     + '<span class="tb" aria-hidden="true">_</span><span class="tb" aria-hidden="true">□</span>'
     + (opts.close ? '<button class="tb x" data-act="' + opts.close + '" aria-label="' + esc(opts.closeLabel || 'Закрыть') + '">×</button>' : '')
-    + '</div>' + (opts.menu ? '<div class="menubar">' + opts.menu + '</div>' : '') + '<div class="body">' + inner + '</div></section>';
+    + '</div>' + (opts.menu ? '<div class="menubar">' + opts.menu + '</div>' : '') + '<div class="body' + (opts.puzzle && PUZZLE.url ? ' puzzle-body' : '') + '">' + (opts.puzzle && PUZZLE.url ? '<div class="puzzle-backdrop" aria-hidden="true">' + puzzleScene() + '</div>' + viewPuzzle() : '') + inner + '</div></section>';
 }
-const SCREEN_TITLE = { home: 'Китайский вслух', card: 'Раунд', summary: 'Итоги раунда', dict: 'Словарь', settings: 'Настройки', help: 'Справка' };
+const SCREEN_TITLE = { home: 'Китайский вслух', card: 'Раунд', summary: 'Итоги раунда', dict: 'Словарь', settings: 'Настройки', help: 'Справка', feedback: 'Разбор ответа' };
 function clockText() { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
 setInterval(() => { const el = document.getElementById('clock'); if (el) el.textContent = clockText(); }, 15000);
 function viewTaskbar() {
@@ -1483,11 +1477,98 @@ function viewTaskbar() {
 function leaveCard() { clearTimers(); abortListening(); wakeOff(); S.card = null; PUZZLE.viewing = false; paintPuzzle(false); }
 function render() {
   const app = document.getElementById('app');
-  const html = S.screen === 'card' ? viewCard() : S.screen === 'summary' ? viewSummary() : S.screen === 'dict' ? viewDict() : S.screen === 'settings' ? viewSettings() : S.screen === 'help' ? viewHelp() : viewHome();
-  app.innerHTML = '<main class="wrap">' + viewPuzzle() + html + '</main>' + viewTaskbar();
+  fitViewport();
+  const html = S.screen === 'feedback' ? viewFeedback() : S.screen === 'card' ? viewCard() : S.screen === 'summary' ? viewSummary() : S.screen === 'dict' ? viewDict() : S.screen === 'settings' ? viewSettings() : S.screen === 'help' ? viewHelp() : viewHome();
+  app.innerHTML = '<main class="wrap">' + html + '</main>' + viewTaskbar();
+  paintPuzzle();
+  paginateScreen();
+  fitCard();
   const inp = document.getElementById('typed');
   if (inp && !('ontouchstart' in window)) inp.focus();
-  fitPuzzleView();
+  fitViewport();
+}
+
+function fitCard() {
+  const card = document.querySelector('.card');
+  if (!card || PUZZLE.viewing) return;
+  card.classList.remove('card-compact', 'card-tight');
+  if (card.scrollHeight > card.clientHeight + 1) card.classList.add('card-compact');
+  if (card.scrollHeight > card.clientHeight + 1) card.classList.add('card-tight');
+}
+// Длинные разделы разбиваются по фактической высоте, без вертикального скролла.
+function paginateScreen() {
+  if (S.screen === 'card' || PUZZLE.viewing) return;
+  const body = document.querySelector('.wrap > .win > .body');
+  if (!body) return;
+  const blocks = [...body.children].filter(el => !el.matches('.puzzle-backdrop, .puzzle-status, .home-start'));
+  const launch = body.querySelector('.home-start');
+  const content = document.createElement('div'); content.className = 'page-content';
+  const nav = document.createElement('div'); nav.className = 'page-nav';
+  nav.innerHTML = '<button class="btn" data-act="page" data-val="-1">← Назад</button><span aria-live="polite"></span><button class="btn" data-act="page" data-val="1">Далее →</button>';
+  blocks.forEach(el => el.remove());
+  if (launch) launch.remove();
+  body.append(content, nav);
+  if (launch) body.append(launch);
+  const capacity = content.clientHeight;
+  if (!capacity) return;
+  const pages = []; let page = [];
+  // Разделяем только слишком большие блоки; заголовок повторяется на каждой части.
+  function split(el) {
+    if (el.matches('.list, .checks, .howto, .chips') && el.children.length > 1) {
+      return [...el.children].map(item => { const shell = el.cloneNode(false); shell.append(item); return shell; });
+    }
+    if (el.matches('.panel, .group') && [...el.children].filter(item => !item.matches('h2, .lab')).length > 1) {
+      const heading = el.querySelector('h2');
+      const children = [...el.children].filter(item => item !== heading);
+      const chunks = []; let label = null;
+      children.forEach(item => {
+        if (item.matches('.lab')) { label = item; return; }
+        const shell = el.cloneNode(false);
+        if (heading) shell.append(heading.cloneNode(true));
+        if (label) { shell.append(label); label = null; }
+        shell.append(item); chunks.push(shell);
+      });
+      return chunks.length > 1 ? chunks : null;
+    }
+    if (el.matches('.panel, .group')) {
+      const list = el.querySelector('.list, .checks, .howto, .chips');
+      if (list && list.children.length > 1) {
+        return [...list.children].map(item => {
+          const shell = el.cloneNode(false), heading = el.querySelector('h2');
+          if (heading) shell.append(heading.cloneNode(true));
+          const partial = list.cloneNode(false); partial.append(item); shell.append(partial); return shell;
+        });
+      }
+    }
+    return null;
+  }
+  const queue = blocks.slice();
+  while (queue.length) {
+    const el = queue.shift(); content.append(el);
+    if (content.scrollHeight > capacity + 1) {
+      el.remove();
+      if (page.length) { pages.push(page); page = []; content.replaceChildren(); queue.unshift(el); continue; }
+      const parts = split(el);
+      if (parts) { queue.unshift(...parts); continue; }
+      content.append(el);
+    }
+    page.push(el);
+  }
+  if (page.length) pages.push(page);
+  const index = Math.max(0, Math.min(UI_PAGES[S.screen] || 0, pages.length - 1));
+  UI_PAGES[S.screen] = index;
+  content.replaceChildren(...(pages[index] || []));
+  if (pages.length < 2) nav.remove();
+  else {
+    nav.querySelector('span').textContent = (index + 1) + ' / ' + pages.length;
+    nav.querySelector('[data-val="-1"]').disabled = index === 0;
+    nav.querySelector('[data-val="1"]').disabled = index === pages.length - 1;
+  }
+}
+function viewFeedback() {
+  const fb = S.card && S.card.fb;
+  if (!fb) { S.screen = 'card'; return viewCard(); }
+  return win('Разбор ответа', fb.lines.map(line => '<div class="panel">' + line + '</div>').join('') + '<button class="btn primary" data-act="feedback-back">Вернуться к заданию</button>', { close: 'feedback-back' });
 }
 
 function viewHome() {
@@ -1537,13 +1618,13 @@ function viewHome() {
     + '<section class="stats" aria-label="Прогресс"><div class="stat"><b>' + learned + '</b><span>выучено</span></div><div class="stat"><b>' + inWork + '</b><span>в работе</span></div><div class="stat"><b>' + fresh + '</b><span>новых</span></div></section>'
     + '<section class="stats two" aria-label="Сегодня"><div class="stat"><b>' + due + '</b><span>к повторению сегодня</span></div><div class="stat"><b>' + sk + '</b><span>' + plural(sk, 'день', 'дня', 'дней') + ' подряд</span></div></section>'
     + '<section class="panel"><h2>Темы</h2><div class="chips">' + chips + '</div>'
-    + '<button class="btn primary big" data-act="start">' + ICON.play + ' Начать раунд · ' + N + ' ' + plural(N, 'слово', 'слова', 'слов') + '</button></section>'
+    + '</section>'
     + weakPanel
     + frameNote
     + '<section class="panel"><h2>Проверка устройства</h2><ul class="checks">' + checks.map(c => '<li><span class="dot ' + c[0] + '"></span><span>' + c[1] + '</span></li>').join('') + '</ul>'
     + (useVoice() ? '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="mictest">' + ICON.mic + ' Проверить микрофон</button><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div>' : (ttsOk ? '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div>' : ''))
     + '<p class="muted small" style="margin:0">Как проходит раунд и что умеет проверка — в разделе «Справка».</p></section>';
-  return win('Китайский вслух', inner, { menu });
+  return win('Китайский вслух', inner + '<button class="btn primary big home-start" data-act="start">' + ICON.play + ' Начать раунд · ' + N + ' ' + plural(N, 'слово', 'слова', 'слов') + '</button>', { menu });
 }
 function viewHelp() {
   const inner = '<section class="panel"><h2>Как проходит раунд</h2><ol class="howto">'
@@ -1578,13 +1659,13 @@ function viewCard() {
   const stepIdx = isRu ? (saying ? (c.attempts > 0 || S.listening ? 1 : 0) : 2) : c.phase === 'repeat' ? (S.speaking ? 0 : 1) : 2;
   const stepsHtml = steps.map((s, k) => '<li class="' + (k < stepIdx || c.phase === 'result' ? 'done' : k === stepIdx ? 'on' : '') + '">' + s + '</li>').join('');
   let area = '';
-  const fb = c.fb ? '<div class="fb ' + c.fb.kind + '" role="status"><span class="ico">' + WIN_ICON[c.fb.kind] + '</span><div class="txt"><b class="tag">' + esc(c.fb.tag) + '</b>' + c.fb.lines.map(l => '<div>' + l + '</div>').join('') + '</div></div>' : '';
+  const fb = c.fb ? '<div class="fb ' + c.fb.kind + '" role="status"><span class="ico">' + WIN_ICON[c.fb.kind] + '</span><div class="txt"><b class="tag">' + esc(c.fb.tag) + '</b>' + '<div>' + c.fb.lines[0] + '</div>' + (c.fb.lines.length > 1 ? '<button class="btn detail-btn" data-act="feedback">Разбор ответа</button>' : '') + '</div></div>' : '';
   const voice = useVoice();
   const ruStep = c.phase === 'translate';
   const langWord = ruStep ? 'по-русски' : 'по-китайски';
   const micBtn = (label) => voice
     ? '<button class="mic ' + (ruStep ? 'ru' : 'zh') + (S.listening ? ' live' : '') + '" data-act="mic" aria-label="' + (S.listening ? 'Остановить запись' : label) + '">' + (S.listening ? ICON.stop : ICON.mic) + '<span class="ml">' + (ruStep ? 'РУС' : '中文') + '</span></button>'
-      + '<div class="live" id="live" aria-live="polite">' + (S.listening ? (c.live ? 'Слышу: ' + esc(c.live) : 'Говорите ' + langWord + '…') : (S.speaking ? 'Слушайте…' : (S.micOk ? 'Нажмите на микрофон и говорите ' + langWord : 'Нажмите на микрофон: первый раз после открытия включайте его сами'))) + '</div>'
+      + '<div class="live" id="live" aria-live="polite">' + (S.listening ? (c.live ? 'Слышу: ' + esc(c.live) : 'Говорите ' + langWord + '…') : (S.speaking ? 'Слушайте…' : (S.micOk ? 'Нажмите микрофон · ' + langWord : 'Нажмите микрофон · ' + langWord))) + '</div>'
     : '';
   const typed = (ph) => voice ? '' : '<form class="typed" data-form="typed"><input id="typed" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="' + esc(ph) + '" aria-label="' + esc(ph) + '"><button class="btn primary" type="submit">Проверить</button></form>';
 
@@ -1624,7 +1705,7 @@ function viewCard() {
     + '<span class="count">' + pct + '%</span></div>'
     + '<section class="card">'
     + '<div class="meta"><span class="badge' + (isIntro ? ' new' : '') + '">' + (isIntro ? 'Новое слово' : item.mode === 'recall' ? 'Вспомните' : isRu ? 'По-китайски' : 'Повторение') + '</span><span>' + esc(THEME_NAME[w.t]) + '</span></div>'
-    + '<button class="word" data-act="play" aria-label="Прослушать слово">'
+    + '<button class="word" style="--hz-count:' + w.h.length + '" data-act="play" aria-label="Прослушать слово">'
     + (showHz ? '<span class="hz" lang="zh-CN">' + esc(w.h) + '</span>' : '<span class="hz hidden">· · ·</span>')
     + (showPy ? '<span class="py">' + pinyinHtml(w.s) + '</span>' : '')
     + (showMean
@@ -1635,8 +1716,8 @@ function viewCard() {
       ? (ruVoice() ? '<div class="row"><button class="btn" data-act="play">' + ICON.play + ' Повторить задание</button></div>' : '')
       : '<div class="row"><button class="btn" data-act="play">' + ICON.play + ' Ещё раз</button><button class="btn" data-act="slow">Медленно</button></div>')
     + '<ol class="steps">' + stepsHtml + '</ol>'
-    + area
-    + '</section>', { close: 'quit', closeLabel: 'Закончить раунд' });
+    + '<div class="answer-area">' + area + '</div>'
+    + '</section>', { close: 'quit', closeLabel: 'Закончить раунд', puzzle: true });
 }
 
 function viewSummary() {
@@ -1650,7 +1731,7 @@ function viewSummary() {
   }).join('');
   return win('Раунд завершён', '<section class="panel" style="text-align:center"><h2>Результат</h2><div class="score">' + ok + ' из ' + ids.length + '</div><div class="muted small">' + plural(ok, 'слово', 'слова', 'слов') + ' с первого раза · прогресс сохранён</div></section>'
     + '<section class="list" aria-label="Слова раунда">' + rows + '</section>'
-    + '<div class="row"><button class="btn primary big" data-act="start">' + ICON.play + ' Ещё раунд</button><button class="btn" data-act="home">На главную</button></div>', { close: 'home' });
+    + '<div class="row"><button class="btn primary big" data-act="start">' + ICON.play + ' Ещё раунд</button><button class="btn" data-act="home">На главную</button></div>', { close: 'home', puzzle: true });
 }
 
 function viewDict() {
@@ -1707,8 +1788,10 @@ document.addEventListener('click', e => {
   if (act !== 'startmenu') S.startOpen = false;
   if (S.set.beep) ensureAudio();
   switch (act) {
+    case 'page': UI_PAGES[S.screen] = Math.max(0, (UI_PAGES[S.screen] || 0) + Number(b.dataset.val)); render(); break;
+    case 'feedback': clearTimers(); abortListening(); S.screen = 'feedback'; render(); break;
+    case 'feedback-back': S.screen = 'card'; render(); break;
     case 'puzzle-view': puzzleView(); break;
-    case 'puzzle-remove': puzzleRemove(); break;
     case 'startmenu': S.startOpen = !S.startOpen; render(); break;
     case 'closemenu': render(); break;
     case 'start': leaveCard(); startRound(); if (S.screen !== 'card') render(); break;
@@ -1788,7 +1871,6 @@ document.addEventListener('click', e => {
 });
 document.addEventListener('change', e => {
   const t = e.target;
-  if (t.id === 'puzzle-photo') { if (t.files && t.files[0]) puzzlePhoto(t.files[0], true); return; }
   if (t.dataset.tog) { S.set[t.dataset.tog] = t.checked; save(KEY_SET, S.set); }
   if (t.dataset.sel) { S.set[t.dataset.sel] = t.value; save(KEY_SET, S.set); }
   if (t.dataset.range) { S.set[t.dataset.range] = +t.value; save(KEY_SET, S.set); }

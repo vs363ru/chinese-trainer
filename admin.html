@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' blob:; connect-src https://api.github.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Фотография тренажёра — управление</title>
+  <link rel="stylesheet" href="admin.css">
+  <script src="admin.js" defer></script>
+</head>
+<body>
+  <main class="panel" id="admin-panel">
+    <header>
+      <a class="back" href="./">← Тренажёр</a>
+      <h1>Фотография для пазла</h1>
+      <p class="subtitle">Общий фон для всех участников</p>
+      <button id="preview-phone-button" class="quiet phone-button" type="button">Предпросмотр телефона</button>
+    </header>
+
+    <section id="login-panel" aria-labelledby="login-title">
+      <h2 id="login-title">Вход владельца</h2>
+      <p class="hint">Публикация доступна аккаунту GitHub <strong>vs363ru</strong> с правом записи в этот репозиторий.</p>
+      <form id="login-form" autocomplete="off">
+        <label for="github-token">Ключ доступа GitHub</label>
+        <input id="github-token" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…" required aria-describedby="token-note">
+        <button id="login-button" type="submit">Войти</button>
+      </form>
+      <p id="token-note" class="hint">Ключ используется только для GitHub и хранится в памяти этой вкладки. После закрытия страницы потребуется новый вход.</p>
+      <details class="help">
+        <summary>Как получить ключ</summary>
+        <ol>
+          <li>Откройте <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener noreferrer">создание fine-grained token в GitHub</a> под аккаунтом vs363ru.</li>
+          <li>Выберите владельца <strong>vs363ru</strong>, срок действия и <strong>Only select repositories → chinese-trainer</strong>.</li>
+          <li>В Repository permissions установите <strong>Contents → Read and write</strong>. Другие права добавлять не требуется.</li>
+          <li>Нажмите Generate token, скопируйте ключ и вставьте его в поле выше.</li>
+        </ol>
+        <p>Также можно загрузить готовый JPG через <a href="https://github.com/vs363ru/chinese-trainer/tree/main/images" target="_blank" rel="noopener noreferrer">папку images в GitHub</a> под именем <strong>reward.jpg</strong>.</p>
+      </details>
+    </section>
+
+    <section id="owner-panel" hidden aria-labelledby="owner-title">
+      <div class="owner-heading">
+        <h2 id="owner-title">Владелец: vs363ru</h2>
+        <button id="logout-button" class="quiet" type="button">Выйти</button>
+      </div>
+      <div class="preview" id="preview-box">
+        <img id="preview-image" alt="Предпросмотр выбранной фотографии" hidden>
+        <p id="preview-empty">Выберите фотографию или рисунок</p>
+      </div>
+      <label class="choose" for="reward-file">Выбрать изображение
+        <input id="reward-file" type="file" accept="image/jpeg,image/png,image/webp" disabled>
+      </label>
+      <p id="file-note" class="hint">JPG, PNG или WebP, до 20 МБ. Изображение будет уменьшено до 1600 пикселей.</p>
+      <div class="actions">
+        <button id="publish-button" type="button" disabled>Опубликовать для всех</button>
+        <button id="remove-button" class="quiet danger" type="button" disabled>Убрать общий фон</button>
+      </div>
+      <p class="hint">После публикации обновление GitHub Pages может занять несколько минут. Фотография станет публичной.</p>
+    </section>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+  </main>
+  <section id="phone-preview" class="phone-preview" hidden aria-label="Предпросмотр тренажёра на телефоне">
+    <div class="phone-heading">
+      <button id="preview-back-button" class="quiet" type="button">← Назад</button>
+      <span>375 × 667</span>
+    </div>
+    <div class="phone-space" id="phone-space">
+      <div class="device-frame" id="device-frame">
+        <iframe id="trainer-preview" title="Тренажёр: экран телефона" width="375" height="667"></iframe>
+      </div>
+    </div>
+  </section>
+</body>
+</html>
