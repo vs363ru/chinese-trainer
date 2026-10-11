@@ -120,6 +120,9 @@ h2 { margin: 0; font-size: 14px; font-weight: 700; }
 .prompt { font-size: 17px; font-weight: 700; }
 .mic { width: 92px; height: 92px; border: 0; background: var(--face); box-shadow: var(--raised); color: var(--dk); display: grid; place-items: center; margin: 0 auto; position: relative; }
 .mic svg { width: 40px; height: 40px; }
+.mic .ml { position: absolute; left: 0; right: 0; bottom: 5px; font: 700 12px/1 var(--f-ui); letter-spacing: .03em; }
+.mic.ru .ml { color: var(--sel); } .mic.zh .ml { color: #C00000; }
+.mic.ru svg, .mic.zh svg { margin-bottom: 12px; }
 .mic:active, .mic.live { box-shadow: var(--pressed); }
 .mic.live { color: #C00000; }
 .mic.live::after { content: ""; position: absolute; top: 8px; right: 8px; width: 11px; height: 11px; border-radius: 50%; background: #FF0000; box-shadow: 0 0 5px #FF0000; animation: blink 1s steps(2, start) infinite; }
@@ -634,7 +637,7 @@ function checkTranslation(word, alts, strictHanzi) {
 const KEY_SET = 'kv.settings.v1', KEY_PROG = 'kv.progress.v1', KEY_STATS = 'kv.stats.v1';
 function load(key, def) { try { const v = localStorage.getItem(key); return v ? Object.assign(def, JSON.parse(v)) : def; } catch (e) { return def; } }
 function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* хранилище недоступно */ } }
-const DEFAULTS = () => ({ themes: THEMES.map(t => t.id), roundSize: 10, newPerRound: 4, showHanzi: true, showPinyin: true, rate: 0.8, autoMic: true, autoNext: true, input: 'voice', voiceURI: '', direction: 'mix', beep: false, meaning: 'after' });
+const DEFAULTS = () => ({ themes: THEMES.map(t => t.id), roundSize: 10, newPerRound: 4, showHanzi: true, showPinyin: true, rate: 0.8, autoMic: true, autoNext: true, input: 'voice', voiceURI: '', direction: 'mix', beep: false, meaning: 'always' });
 let ST = load(KEY_STATS, { days: {}, tones: {}, pairs: {} });
 ST.days = ST.days || {}; ST.tones = ST.tones || {}; ST.pairs = ST.pairs || {};
 function dayKey(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
@@ -669,7 +672,9 @@ const S = {
 S.set.themes = S.set.themes.filter(id => THEME_NAME[id]);
 if (!S.set.themes.length) S.set.themes = THEMES.map(t => t.id);
 if (!['mix', 'zh', 'ru'].includes(S.set.direction)) S.set.direction = 'mix';
-if (!['after', 'always'].includes(S.set.meaning)) S.set.meaning = 'after';
+if (!['after', 'always'].includes(S.set.meaning)) S.set.meaning = 'always';
+// Версия 2: перевод на карточке виден всегда (по просьбе пользователя); прежние настройки переводим один раз
+if ((S.set.v || 0) < 2) { S.set.meaning = 'always'; S.set.v = 2; save(KEY_SET, S.set); }
 function useVoice() { return !!SR && !S.micBlocked && S.set.input !== 'text'; }
 function P(id) { return S.prog[id] || null; }
 
@@ -1039,8 +1044,44 @@ function advanceAfterPron() {
     }
     c.phase = 'translate';
     render();
-    if (S.set.autoMic && useVoice()) later(() => { if (S.card === c && !S.listening) startListening(false); }, 450);
+    askTranslation(c);
   }, 900);
+}
+// Программа вслух просит перевод по-русски, затем включает микрофон — чтобы не путать с повтором китайского слова
+function askTranslation(c) {
+  const go = () => { if (S.card === c && c.phase === 'translate' && S.set.autoMic && useVoice() && !S.listening) later(() => { if (S.card === c && !S.listening) startListening(false); }, 250); };
+  if (ruVoice()) speak('А как это по-русски?', 1.05, 'ru-RU').then(go);
+  else go();
+}
+// Похоже ли сказанное по-русски на само китайское слово (человек повторил его вместо перевода)
+const PAL_INIT = { b: 'б', p: 'п', m: 'м', f: 'ф', d: 'д', t: 'т', n: 'н', l: 'л', g: 'г', k: 'к', h: 'х', j: 'цз', q: 'ц', x: 'с', zh: 'чж', ch: 'ч', sh: 'ш', r: 'ж', z: 'цз', c: 'ц', s: 'с' };
+const PAL_FIN = { a: 'а', o: 'о', e: 'э', ai: 'ай', ei: 'эй', ao: 'ао', ou: 'оу', an: 'ань', en: 'энь', ang: 'ан', eng: 'эн', ong: 'ун', i: 'и', ia: 'я', ie: 'е', iao: 'яо', iu: 'ю', ian: 'янь', in: 'инь', iang: 'ян', ing: 'ин', iong: 'юн', u: 'у', ua: 'уа', uo: 'о', uai: 'уай', ui: 'уй', uan: 'уань', un: 'унь', uang: 'уан', 'ü': 'юй', 'üe': 'юэ', 'üan': 'юань', 'ün': 'юнь' };
+const PAL_YW = { yi: 'и', ya: 'я', ye: 'е', yao: 'яо', you: 'ю', yan: 'янь', yin: 'инь', yang: 'ян', ying: 'ин', yong: 'юн', yu: 'юй', yue: 'юэ', yuan: 'юань', yun: 'юнь', wu: 'у', wa: 'ва', wo: 'во', wai: 'вай', wei: 'вэй', wan: 'вань', wen: 'вэнь', wang: 'ван', weng: 'вэн', er: 'эр' };
+function palladius(b) {
+  if (PAL_YW[b]) return PAL_YW[b];
+  const [ini, f0] = splitSyl(b);
+  const fin = 'jqx'.includes(ini) && ini && f0[0] === 'u' ? 'ü' + f0.slice(1) : f0;
+  let f = PAL_FIN[fin] || fin;
+  if (fin === 'i' && ['z', 'c', 's'].includes(ini)) f = 'ы';
+  return (PAL_INIT[ini] || '') + f;
+}
+function soundSkeleton(t) {
+  return String(t).toLowerCase().replace(/ё/g, 'е').replace(/[^а-я]/g, '')
+    .replace(/цз|дз/g, 'з').replace(/чж|дж/g, 'ж').replace(/[ьъ]/g, '')
+    .replace(/[щчжшзц]/g, 'с').replace(/[эе]/g, 'е').replace(/[ыий]/g, 'и').replace(/ю/g, 'у').replace(/я/g, 'а');
+}
+function soundsLikeChinese(word, heard) {
+  const h = String(heard).toLowerCase();
+  const latin = h.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, '');
+  if (latin.length >= 2) {
+    const want = word.syl.map(x => x.base).join('').replace(/ü/g, 'u');
+    return lev(latin, want) <= Math.floor(want.length * 0.34);
+  }
+  const a = soundSkeleton(h), b = soundSkeleton(word.syl.map(x => palladius(x.base)).join(''));
+  if (a.length < 2 || b.length < 2) return false;
+  // Короткие слоги легко спутать с русскими словами («та» и «да»): для них только точное совпадение
+  if (b.length <= 3) return a === b;
+  return lev(a, b) <= Math.max(1, Math.floor(b.length * 0.34));
 }
 function peek() {
   const c = S.card;
@@ -1079,6 +1120,13 @@ function onTranslate(res) {
     return;
   }
   if (res.level === 'dontknow') { failTranslation('Правильно: ' + main, true); return; }
+  if (res.level === 'wrong' && soundsLikeChinese(w, res.heard)) {
+    c.tr--;
+    c.fb = { kind: 'warn', tag: 'Нужен перевод на русский', lines: ['Вы снова сказали китайское слово («' + esc(res.heard) + '»). Повторять его второй раз не нужно — сейчас скажите по-русски, что оно значит.'] };
+    render();
+    if (!c.rewarned) { c.rewarned = true; askTranslation(c); }
+    return;
+  }
   const said = res.level === 'none' ? 'Ничего не распознано.' : 'Вы сказали: «' + esc(res.heard) + '».';
   if (c.tr < 2 && res.level === 'none') {
     c.fb = { kind: 'warn', tag: 'Не расслышал', lines: [said + ' Попробуйте ещё раз.'] };
@@ -1294,9 +1342,9 @@ function viewHelp() {
   const inner = '<section class="panel"><h2>Как проходит раунд</h2><ol class="howto">'
     + '<li>Программа произносит слово по-китайски.</li>'
     + '<li>Вы повторяете. Она сверяет слоги и тоны и показывает, что прозвучало не так.</li>'
-    + '<li>Вы говорите перевод по-русски. Она проверяет его.</li>'
+    + '<li>Под словом всегда виден перевод. Если в настройках выбрано «После ответа», программа скрывает перевод и просит назвать его по-русски (кнопка микрофона с надписью «РУС»).</li>'
     + '<li>Выученные слова (уровень 3+) идут наоборот: она называет перевод, вы говорите по-китайски.</li></ol>'
-    + '<p class="muted small" style="margin:0">У нового слова перевод виден сразу, а спрашивается оно через пару карточек. На повторении перевод скрыт до ответа; если забыли, нажмите «Не помню — показать перевод». Постоянный показ перевода включается в настройках. Ошибки возвращаются в конце раунда, выученные слова — через 1, 3, 7 и 21 день. Направление можно изменить в настройках.</p></section>'
+    + '<p class="muted small" style="margin:0">Новое слово возвращается через пару карточек для закрепления. Ошибки возвращаются в конце раунда, выученные слова — через 1, 3, 7 и 21 день. Направление можно изменить в настройках.</p></section>'
     + '<section class="panel"><h2>Проверка произношения</h2><p class="small" style="margin:0">Проверку делает распознавание речи браузера: оно определяет, какое слово вы сказали, но тон оценивает не так тонко, как преподаватель. Если уверены, что сказали верно, нажмите «Засчитать». Практический смысл проверки: понял бы вас китаец.</p></section>'
     + '<section class="panel"><h2>Где работает голос</h2><ul class="checks">'
     + '<li><span class="dot ok"></span><span>Компьютер и Android — Chrome. iPhone, iPad, Mac — Safari. Нужен интернет.</span></li>'
@@ -1325,9 +1373,11 @@ function viewCard() {
   let area = '';
   const fb = c.fb ? '<div class="fb ' + c.fb.kind + '" role="status"><span class="ico">' + WIN_ICON[c.fb.kind] + '</span><div class="txt"><b class="tag">' + esc(c.fb.tag) + '</b>' + c.fb.lines.map(l => '<div>' + l + '</div>').join('') + '</div></div>' : '';
   const voice = useVoice();
+  const ruStep = c.phase === 'translate';
+  const langWord = ruStep ? 'по-русски' : 'по-китайски';
   const micBtn = (label) => voice
-    ? '<button class="mic' + (S.listening ? ' live' : '') + '" data-act="mic" aria-label="' + (S.listening ? 'Остановить запись' : label) + '">' + (S.listening ? ICON.stop : ICON.mic) + '</button>'
-      + '<div class="live" id="live" aria-live="polite">' + (S.listening ? (c.live ? 'Слышу: ' + esc(c.live) : 'Говорите…') : (S.speaking ? 'Слушайте…' : 'Нажмите на микрофон')) + '</div>'
+    ? '<button class="mic ' + (ruStep ? 'ru' : 'zh') + (S.listening ? ' live' : '') + '" data-act="mic" aria-label="' + (S.listening ? 'Остановить запись' : label) + '">' + (S.listening ? ICON.stop : ICON.mic) + '<span class="ml">' + (ruStep ? 'РУС' : '中文') + '</span></button>'
+      + '<div class="live" id="live" aria-live="polite">' + (S.listening ? (c.live ? 'Слышу: ' + esc(c.live) : 'Говорите ' + langWord + '…') : (S.speaking ? 'Слушайте…' : 'Нажмите на микрофон и говорите ' + langWord)) + '</div>'
     : '';
   const typed = (ph) => voice ? '' : '<form class="typed" data-form="typed"><input id="typed" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="' + esc(ph) + '" aria-label="' + esc(ph) + '"><button class="btn primary" type="submit">Проверить</button></form>';
 
@@ -1352,7 +1402,9 @@ function viewCard() {
       + '<p class="muted small" style="margin:0">Запомните перевод — спрошу через пару карточек.</p>'
       + '<div class="row"><button class="btn primary big" data-act="introdone">Запомнил, дальше</button></div>';
   } else if (c.phase === 'translate') {
-    area = fb + '<div class="prompt">Как это по-русски?</div>' + micBtn('Сказать перевод') + typed('Перевод по-русски')
+    area = fb + '<div class="prompt">Теперь переведите: что значит это слово по-русски?</div>'
+      + '<p class="muted small" style="margin:0">Китайское слово уже засчитано, второй раз его повторять не нужно.</p>'
+      + micBtn('Сказать перевод по-русски') + typed('Перевод по-русски')
       + '<div class="row"><button class="btn" data-act="peek">Не помню — показать перевод</button></div>';
   } else if (c.phase === 'result') {
     area = fb
@@ -1421,8 +1473,8 @@ function viewSettings() {
     + '<p class="muted small" style="margin:0">«Смешанно»: новые слова и слова в работе — слушать и переводить; выученные (уровень 3+) — программа называет перевод, а вы говорите по-китайски.</p></section>'
     + '<section class="panel"><h2>Ответы</h2>' + seg('input', ['voice', 'text'], v => v === 'voice' ? 'Голосом' : 'С клавиатуры')
     + tog('autoMic', 'Микрофон включается сам после слова') + tog('autoNext', 'Переходить дальше после верного ответа') + tog('beep', 'Короткий сигнал, когда микрофон включился') + '</section>'
-    + '<section class="panel"><h2>Перевод на карточке</h2>' + seg('meaning', ['after', 'always'], v => v === 'after' ? 'После ответа' : 'Сразу')
-    + '<p class="muted small" style="margin:0">«После ответа»: на повторении перевод скрыт, пока вы не назовёте его сами, — так слова запоминаются прочнее. «Сразу»: перевод виден всегда, а вопрос о переводе пропускается. У новых слов перевод виден сразу в обоих режимах.</p></section>'
+    + '<section class="panel"><h2>Перевод на карточке</h2>' + seg('meaning', ['always', 'after'], v => v === 'after' ? 'После ответа' : 'Сразу')
+    + '<p class="muted small" style="margin:0">«Сразу»: перевод виден всегда; вы слушаете и повторяете слово, отдельно называть перевод не нужно. «После ответа»: на повторении перевод скрыт, и после повтора программа просит сказать его по-русски — так слова запоминаются прочнее, но шаг сложнее. У новых слов перевод виден сразу в обоих режимах.</p></section>'
     + '<section class="panel"><h2>Показ</h2>' + tog('showHanzi', 'Показывать иероглифы') + tog('showPinyin', 'Показывать пиньинь')
     + '<p class="muted small" style="margin:0">Без иероглифов и пиньиня — тренировка только на слух.</p></section>'
     + '<section class="panel"><h2>Голос</h2><div class="field"><label for="rate">Скорость речи: <span id="rateval">' + s.rate.toFixed(2) + '</span></label><input id="rate" type="range" min="0.5" max="1.1" step="0.05" value="' + s.rate + '" data-range="rate"></div>'
@@ -1557,7 +1609,7 @@ document.addEventListener('keydown', e => {
 });
 
 // Доступ для автотестов
-window.__kv = { WORDS, checkPron, checkTyped, checkTranslation, pinyinPlain, numZh, cleanZh, describeSyl, hardWords, streak, S, get ST() { return ST; } };
+window.__kv = { WORDS, checkPron, checkTyped, checkTranslation, pinyinPlain, numZh, cleanZh, describeSyl, hardWords, streak, palladius, soundsLikeChinese, S, get ST() { return ST; } };
 
 render();
 if (window.speechSynthesis) setTimeout(() => { if (S.screen === 'home') render(); }, 700);
