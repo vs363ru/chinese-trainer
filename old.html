@@ -1,0 +1,1568 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#008080">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Китайский">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png" type="image/png">
+<style>body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
+<!-- ARTIFACT:START -->
+<title>Китайский вслух</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Noto+Sans:wght@400;500;600&family=Noto+Serif+SC:wght@600;700&display=swap">
+<style>
+/* Макет: рабочий стол Windows 95 — бирюзовый фон, серые окна с фаской, синие заголовки, панель задач с кнопкой «Пуск» */
+:root {
+  --desk: #008080;
+  --face: #C0C0C0; --lt: #DFDFDF; --hi: #FFFFFF; --sh: #808080; --dk: #000000;
+  --title1: #000080; --title2: #1084D0; --title-fg: #FFFFFF;
+  --ink: #000000; --muted: #4A4A4A; --field: #FFFFFF; --sel: #000080; --sel-fg: #FFFFFF; --tip: #FFFF80;
+  --ok: #008000; --bad: #C00000; --warn: #9A5600; --info: #000080;
+  --ok-soft: #DDF0DD; --bad-soft: #F5D9D9; --warn-soft: #FFF2BF; --info-soft: #DCE4FF;
+  --t1: #E00000; --t2: #00A000; --t3: #0000FF; --t4: #A000A0; --t0: #808080;
+  --f-hanzi: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  --f-ui: Tahoma, Verdana, "MS Sans Serif", "Segoe UI", Arial, sans-serif;
+  --f-py: "Noto Sans", Verdana, Arial, sans-serif;
+  --raised: inset -1px -1px 0 var(--dk), inset 1px 1px 0 var(--hi), inset -2px -2px 0 var(--sh), inset 2px 2px 0 var(--lt);
+  --sunk: inset 1px 1px 0 var(--sh), inset -1px -1px 0 var(--hi), inset 2px 2px 0 var(--dk), inset -2px -2px 0 var(--lt);
+  --pressed: inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--hi), inset 2px 2px 0 var(--sh), inset -2px -2px 0 var(--lt);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--desk); color: var(--ink); font: 15px/1.45 var(--f-ui); -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 1px dotted var(--dk); outline-offset: -4px; }
+.wrap { max-width: 560px; margin: 0 auto; padding-inline: 10px; padding-block: 12px 72px; display: grid; gap: 14px; }
+.wrap > *, .card > *, .panel > *, .body > * { min-width: 0; }
+
+/* Окно */
+.win { background: var(--face); box-shadow: var(--raised); padding: 3px; }
+.titlebar { display: flex; align-items: center; gap: 6px; padding: 3px 3px 3px 6px; background: linear-gradient(90deg, var(--title1), var(--title2)); color: var(--title-fg); font-weight: 700; font-size: 15px; min-height: 28px; }
+.titlebar .tt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.seal { width: 18px; height: 18px; flex: none; background: var(--field); color: var(--sel); display: grid; place-items: center; font: 700 13px/1 var(--f-hanzi); box-shadow: 1px 1px 0 var(--dk); }
+.tb { width: 24px; height: 22px; flex: none; border: 0; background: var(--face); box-shadow: var(--raised); color: var(--dk); font: 700 13px/1 var(--f-ui); display: grid; place-items: center; padding: 0 0 2px; }
+.tb.x { font-size: 15px; }
+.tb:active { box-shadow: var(--pressed); }
+.tb svg { width: 14px; height: 14px; }
+.menubar { display: flex; flex-wrap: wrap; padding: 1px 2px; border-bottom: 1px solid var(--sh); box-shadow: 0 1px 0 var(--hi); }
+.menubar button { border: 0; background: none; padding: 5px 9px; font-size: 14px; min-height: 32px; }
+.menubar button u { text-decoration: underline; }
+.menubar button:active, .menubar button[aria-current="true"] { background: var(--sel); color: var(--sel-fg); }
+.body { padding: 8px 8px 10px; display: grid; gap: 12px; }
+
+/* Общие элементы */
+h2 { margin: 0; font-size: 14px; font-weight: 700; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.btn { min-height: 38px; padding: 6px 16px; border: 0; background: var(--face); box-shadow: var(--raised); font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.btn:active { box-shadow: var(--pressed); padding: 7px 15px 5px 17px; }
+.btn.primary { font-weight: 700; outline: 1px solid var(--dk); outline-offset: 0; }
+.btn.big { min-height: 46px; font-size: 16px; width: 100%; }
+.btn.quiet { box-shadow: none; background: none; text-decoration: underline; color: var(--sel); }
+.btn.quiet:active { padding: 6px 16px; }
+.btn svg { width: 17px; height: 17px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.panel { position: relative; border: 2px groove var(--hi); padding: 16px 10px 10px; margin-top: 6px; display: grid; gap: 10px; }
+.panel > h2:first-child { position: absolute; top: -9px; left: 8px; background: var(--face); padding: 0 4px; font-size: 13px; font-weight: 700; }
+
+/* Главная */
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.stats.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.stat { background: var(--field); box-shadow: var(--sunk); padding: 8px 10px; display: grid; gap: 0; }
+.stat b { font-size: 24px; line-height: 1.1; color: var(--sel); font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12px; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { min-height: 34px; padding: 4px 10px 4px 7px; border: 0; background: var(--face); box-shadow: var(--raised); font-size: 13px; display: inline-flex; gap: 7px; align-items: center; }
+.chip:active { box-shadow: var(--pressed); }
+.chip .cb { width: 13px; height: 13px; flex: none; background: var(--field); box-shadow: var(--sunk); display: grid; place-items: center; font: 700 11px/1 var(--f-ui); color: var(--dk); }
+.chip[aria-pressed="true"] .cb::before { content: "✓"; }
+.chip em { font-style: normal; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; }
+.chip[aria-pressed="true"] em { color: var(--sel); }
+.checks { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.checks li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 6px; font-size: 13px; align-items: start; }
+.dot { width: 11px; height: 11px; margin: 4px 0 0 3px; background: var(--sh); box-shadow: inset 1px 1px 0 rgba(255,255,255,.55), 1px 1px 0 var(--dk); }
+.dot.ok { background: #00C000; } .dot.bad { background: #E00000; } .dot.warn { background: #FFD000; }
+.howto { margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 14px; }
+.note { background: var(--tip); border: 1px solid var(--dk); padding: 8px 10px; font-size: 13px; }
+.note a { color: var(--sel); font-weight: 700; }
+
+/* Карточка */
+.bar { height: 20px; background: var(--field); box-shadow: var(--sunk); padding: 3px; }
+.bar i { display: block; height: 100%; background: repeating-linear-gradient(90deg, var(--sel) 0 9px, transparent 9px 11px); transition: width .3s; }
+.count { font-variant-numeric: tabular-nums; font-size: 13px; }
+.cardtop { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.card { display: grid; gap: 14px; text-align: center; }
+.meta { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--muted); }
+.badge { padding: 2px 8px; background: var(--sel); color: var(--sel-fg); font-weight: 700; font-size: 12px; }
+.badge.new { background: var(--tip); color: var(--dk); border: 1px solid var(--dk); }
+.word { border: 0; background: var(--field); box-shadow: var(--sunk); padding: 14px 10px; width: 100%; display: grid; gap: 4px; justify-items: center; }
+.hz { font-family: var(--f-hanzi); font-weight: 700; font-size: clamp(64px, 21vw, 112px); line-height: 1.08; letter-spacing: .03em; }
+.hz.hidden { color: var(--sh); font-size: 48px; letter-spacing: .3em; }
+.py { font-family: var(--f-py); font-size: clamp(22px, 6.4vw, 30px); font-weight: 500; letter-spacing: .01em; }
+.s1 { color: var(--t1); } .s2 { color: var(--t2); } .s3 { color: var(--t3); } .s4 { color: var(--t4); } .s0 { color: var(--t0); }
+.meaning { font-size: 24px; font-weight: 700; line-height: 1.25; text-wrap: balance; }
+.mean { width: 100%; margin-top: 6px; padding-top: 8px; border-top: 1px dotted var(--sh); font-size: 24px; font-weight: 700; line-height: 1.25; color: var(--ink); text-wrap: balance; }
+.mean small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 3px; }
+.mean.hid { font-size: 14px; font-weight: 400; font-style: italic; color: var(--sh); }
+.meaning small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 4px; }
+.steps { list-style: none; margin: 0; padding: 3px; display: flex; justify-content: center; flex-wrap: wrap; gap: 2px; background: var(--field); box-shadow: var(--sunk); }
+.steps li { font-size: 13px; padding: 3px 10px; color: var(--muted); }
+.steps li.on { background: var(--sel); color: var(--sel-fg); }
+.steps li.done { color: var(--ok); }
+.steps li.done::before { content: "✓ "; }
+.prompt { font-size: 17px; font-weight: 700; }
+.mic { width: 92px; height: 92px; border: 0; background: var(--face); box-shadow: var(--raised); color: var(--dk); display: grid; place-items: center; margin: 0 auto; position: relative; }
+.mic svg { width: 40px; height: 40px; }
+.mic:active, .mic.live { box-shadow: var(--pressed); }
+.mic.live { color: #C00000; }
+.mic.live::after { content: ""; position: absolute; top: 8px; right: 8px; width: 11px; height: 11px; border-radius: 50%; background: #FF0000; box-shadow: 0 0 5px #FF0000; animation: blink 1s steps(2, start) infinite; }
+.mic:disabled { opacity: .45; cursor: default; }
+@keyframes blink { to { visibility: hidden; } }
+@media (prefers-reduced-motion: reduce) { .mic.live::after { animation: none; } .bar i { transition: none; } }
+.live { min-height: 22px; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.typed { display: flex; gap: 6px; }
+.typed input { flex: 1; width: 0; min-width: 0; min-height: 40px; padding: 6px 8px; border: 0; background: var(--field); box-shadow: var(--sunk); font-size: 16px; }
+.fb { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 10px; padding: 10px; text-align: left; background: var(--face); box-shadow: var(--raised); font-size: 14px; overflow-wrap: anywhere; }
+.fb .ico { width: 32px; height: 32px; }
+.fb .ico svg { width: 32px; height: 32px; display: block; }
+.fb .txt { display: grid; gap: 4px; }
+.fb.ok { background: var(--ok-soft); } .fb.bad { background: var(--bad-soft); } .fb.warn { background: var(--warn-soft); } .fb.info { background: var(--info-soft); }
+.fb b.tag { font-size: 13px; text-transform: uppercase; letter-spacing: .04em; }
+.fb.ok b.tag { color: var(--ok); } .fb.bad b.tag { color: var(--bad); } .fb.warn b.tag { color: var(--warn); } .fb.info b.tag { color: var(--info); }
+.fb .zh { font-family: var(--f-hanzi); font-weight: 700; }
+.fb .pyi { font-family: var(--f-py); }
+
+/* Итоги и словарь */
+.score { font-size: 44px; font-weight: 700; color: var(--sel); font-variant-numeric: tabular-nums; line-height: 1; }
+.list { display: grid; background: var(--field); box-shadow: var(--sunk); padding: 3px; }
+.li { display: grid; grid-template-columns: 60px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 6px; border: 0; border-bottom: 1px dotted var(--sh); background: none; text-align: left; width: 100%; }
+.li:last-child { border-bottom: 0; }
+.li:active { background: var(--sel); color: var(--sel-fg); }
+.li .h { font-family: var(--f-hanzi); font-weight: 700; font-size: 26px; line-height: 1.1; }
+.li .p { font-family: var(--f-py); font-size: 15px; }
+.li .r { font-size: 13px; color: var(--muted); }
+.li:active .r { color: var(--sel-fg); }
+.res { font-size: 12px; padding: 2px 7px; white-space: nowrap; font-weight: 700; }
+.res.ok { background: var(--ok-soft); color: var(--ok); } .res.bad { background: var(--bad-soft); color: var(--bad); }
+.boxes { display: flex; gap: 3px; }
+.boxes i { width: 8px; height: 8px; background: var(--face); box-shadow: inset 1px 1px 0 var(--sh); }
+.boxes i.on { background: var(--sel); box-shadow: none; }
+.group h2 { margin: 10px 0 4px; }
+
+/* Настройки */
+.field { display: grid; gap: 6px; }
+.field label, .lab { font-weight: 700; font-size: 13px; }
+.field select, .field input[type="range"] { min-height: 40px; width: 100%; }
+.field select { padding: 6px 8px; border: 0; background: var(--field); box-shadow: var(--sunk); }
+input[type="range"] { accent-color: var(--sel); }
+.tog { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: center; font-size: 14px; min-height: 36px; }
+.tog input { appearance: none; -webkit-appearance: none; width: 18px; height: 18px; margin: 0; background: var(--field); box-shadow: var(--sunk); display: grid; place-items: center; }
+.tog input:checked::before { content: "✓"; font: 700 14px/1 var(--f-ui); color: var(--dk); }
+.seg { display: flex; gap: 4px; flex-wrap: wrap; }
+.seg button { min-height: 36px; padding: 5px 12px; border: 0; background: var(--face); box-shadow: var(--raised); font-size: 13px; }
+.seg button[aria-pressed="true"] { background: var(--lt); box-shadow: var(--pressed); font-weight: 700; }
+.ta { width: 100%; min-height: 72px; padding: 8px 10px; border: 0; background: var(--field); box-shadow: var(--sunk); font: 13px/1.4 var(--f-ui); resize: vertical; }
+
+/* Панель задач и меню «Пуск» */
+.taskbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: var(--face); border-top: 1px solid var(--hi); box-shadow: 0 -1px 0 var(--sh); display: flex; gap: 5px; align-items: center; padding: 4px 5px; padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px)); }
+.start { height: 30px; border: 0; background: var(--face); box-shadow: var(--raised); font-weight: 700; font-size: 14px; padding: 0 9px 0 6px; display: flex; gap: 6px; align-items: center; flex: none; }
+.start:active, .start[aria-expanded="true"] { box-shadow: var(--pressed); }
+.flag { width: 16px; height: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 1px; transform: skewX(-8deg); }
+.flag i { display: block; }
+.flag i:nth-child(1) { background: #FF0000; } .flag i:nth-child(2) { background: #00C000; } .flag i:nth-child(3) { background: #0000FF; } .flag i:nth-child(4) { background: #FFD000; }
+.task { flex: 1; min-width: 0; height: 30px; box-shadow: var(--pressed); background: var(--lt); padding: 0 8px; display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.clock { height: 30px; flex: none; box-shadow: var(--sunk); background: var(--face); padding: 0 8px; display: flex; align-items: center; font-size: 13px; font-variant-numeric: tabular-nums; }
+.scrim { position: fixed; inset: 0; z-index: 25; background: transparent; border: 0; padding: 0; }
+.startmenu { position: fixed; left: 5px; bottom: calc(42px + env(safe-area-inset-bottom, 0px)); z-index: 30; background: var(--face); box-shadow: var(--raised), 2px 2px 0 rgba(0,0,0,.4); display: grid; grid-template-columns: 26px minmax(0, 1fr); min-width: 230px; max-width: calc(100vw - 10px); padding: 3px; }
+.band { background: linear-gradient(180deg, var(--title2), var(--title1)); color: var(--face); writing-mode: vertical-rl; transform: rotate(180deg); font-weight: 700; font-size: 15px; padding: 8px 3px; letter-spacing: .06em; white-space: nowrap; }
+.band b { color: var(--hi); }
+.startmenu ul { list-style: none; margin: 0; padding: 2px 0; }
+.startmenu li button { width: 100%; text-align: left; border: 0; background: none; padding: 7px 14px 7px 10px; font-size: 15px; display: flex; gap: 10px; align-items: center; min-height: 42px; }
+.startmenu li button:active { background: var(--sel); color: var(--sel-fg); }
+.startmenu li button svg { width: 24px; height: 24px; flex: none; }
+.startmenu hr { border: 0; border-top: 1px solid var(--sh); border-bottom: 1px solid var(--hi); margin: 3px 2px; }
+</style>
+<!-- ARTIFACT:HEAD-END -->
+</head>
+<body>
+<!-- ARTIFACT:BODY -->
+<div id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.29.3/dist/index.js"></script>
+<script>
+(function () {
+'use strict';
+
+// Если основной CDN недоступен, пробуем запасной
+if (!window.pinyinPro) { const s = document.createElement('script'); s.src = 'https://unpkg.com/pinyin-pro@3.29.3/dist/index.js'; document.head.appendChild(s); }
+
+// Ссылка на полную версию с микрофоном (для встроенного просмотра, где микрофон запрещён)
+const FULL_URL = 'https://vs363ru.github.io/chinese-trainer/';
+
+const THEMES = [
+  { id: 'greet', name: 'Вежливость и фразы' },
+  { id: 'people', name: 'Люди и семья' },
+  { id: 'num', name: 'Числа' },
+  { id: 'verb', name: 'Действия' },
+  { id: 'adj', name: 'Качества' },
+  { id: 'time', name: 'Время' },
+  { id: 'ask', name: 'Вопросы и указатели' },
+  { id: 'place', name: 'Еда и страны' },
+  { id: 'city', name: 'Город и транспорт' },
+  { id: 'trade', name: 'Закупки' },
+];
+
+// [тема, иероглифы, слоги с номером тона (5 — нейтральный; «_» внутри слова, пробел между словами), переводы, пояснение]
+// Первый перевод — основной, остальные тоже засчитываются.
+const RAW = [
+  ['greet', '你好', 'ni3 hao3', ['привет', 'здравствуйте', 'здравствуй', 'добрый день'], 'два 3-х тона подряд: первый звучит как 2-й — ní hǎo'],
+  ['greet', '您好', 'nin2 hao3', ['здравствуйте', 'привет', 'добрый день'], 'вежливо, к старшим и клиентам'],
+  ['greet', '谢谢', 'xie4_xie5', ['спасибо', 'благодарю']],
+  ['greet', '不客气', 'bu2 ke4_qi5', ['не за что', 'пожалуйста', 'не стоит благодарности'], 'ответ на «спасибо»'],
+  ['greet', '对不起', 'dui4_bu5_qi3', ['извините', 'простите', 'извини', 'прости']],
+  ['greet', '没关系', 'mei2 guan1_xi5', ['ничего страшного', 'ничего', 'не страшно', 'всё в порядке']],
+  ['greet', '再见', 'zai4_jian4', ['до свидания', 'пока']],
+  ['greet', '请', 'qing3', ['пожалуйста', 'прошу'], 'при просьбе или приглашении'],
+  ['greet', '不', 'bu4', ['нет', 'не']],
+  ['greet', '对', 'dui4', ['правильно', 'верно', 'да', 'точно']],
+  ['greet', '好', 'hao3', ['хорошо', 'хороший', 'ладно']],
+  ['greet', '听不懂', 'ting1_bu5_dong3', ['не понимаю', 'не понимаю на слух', 'не понял'], 'не понимаю на слух'],
+  ['greet', '慢一点', 'man4 yi4_dian3', ['помедленнее', 'медленнее', 'немного медленнее'], 'просьба говорить медленнее'],
+
+  ['people', '我', 'wo3', ['я']],
+  ['people', '你', 'ni3', ['ты']],
+  ['people', '他', 'ta1', ['он']],
+  ['people', '她', 'ta1', ['она'], 'звучит так же, как 他 «он»'],
+  ['people', '我们', 'wo3_men5', ['мы']],
+  ['people', '你们', 'ni3_men5', ['вы'], 'множественное число'],
+  ['people', '他们', 'ta1_men5', ['они']],
+  ['people', '人', 'ren2', ['человек', 'люди']],
+  ['people', '朋友', 'peng2_you5', ['друг', 'подруга', 'друзья']],
+  ['people', '老师', 'lao3_shi1', ['учитель', 'преподаватель', 'учительница']],
+  ['people', '名字', 'ming2_zi5', ['имя']],
+  ['people', '妈妈', 'ma1_ma5', ['мама', 'мать']],
+  ['people', '爸爸', 'ba4_ba5', ['папа', 'отец']],
+  ['people', '儿子', 'er2_zi5', ['сын']],
+  ['people', '女儿', 'nü3_er2', ['дочь', 'дочка']],
+  ['people', '孩子', 'hai2_zi5', ['ребёнок', 'дети', 'ребенок']],
+
+  ['num', '零', 'ling2', ['ноль', 'нуль', '0']],
+  ['num', '一', 'yi1', ['один', '1', 'раз']],
+  ['num', '二', 'er4', ['два', '2']],
+  ['num', '三', 'san1', ['три', '3']],
+  ['num', '四', 'si4', ['четыре', '4']],
+  ['num', '五', 'wu3', ['пять', '5']],
+  ['num', '六', 'liu4', ['шесть', '6']],
+  ['num', '七', 'qi1', ['семь', '7']],
+  ['num', '八', 'ba1', ['восемь', '8']],
+  ['num', '九', 'jiu3', ['девять', '9']],
+  ['num', '十', 'shi2', ['десять', '10']],
+  ['num', '百', 'bai3', ['сто', '100', 'сотня']],
+  ['num', '千', 'qian1', ['тысяча', '1000']],
+  ['num', '两', 'liang3', ['два', '2', 'пара'], '«два» при счёте предметов: 两个'],
+  ['num', '个', 'ge4', ['штука', 'штук', 'счётное слово'], 'счётное слово: 三个 — три штуки'],
+
+  ['verb', '是', 'shi4', ['быть', 'являться', 'да']],
+  ['verb', '有', 'you3', ['иметь', 'есть', 'имеется']],
+  ['verb', '没有', 'mei2_you3', ['нет', 'не иметь', 'не было']],
+  ['verb', '要', 'yao4', ['хотеть', 'нужно', 'надо', 'нужен']],
+  ['verb', '想', 'xiang3', ['хотеть', 'думать', 'скучать']],
+  ['verb', '去', 'qu4', ['идти', 'ехать', 'пойти', 'поехать', 'ходить']],
+  ['verb', '来', 'lai2', ['приходить', 'прийти', 'приезжать', 'приехать']],
+  ['verb', '回', 'hui2', ['возвращаться', 'вернуться']],
+  ['verb', '吃', 'chi1', ['есть', 'кушать', 'поесть', 'съесть']],
+  ['verb', '喝', 'he1', ['пить', 'выпить']],
+  ['verb', '看', 'kan4', ['смотреть', 'посмотреть', 'читать', 'видеть']],
+  ['verb', '听', 'ting1', ['слушать', 'послушать', 'слышать']],
+  ['verb', '说', 'shuo1', ['говорить', 'сказать']],
+  ['verb', '买', 'mai3', ['покупать', 'купить']],
+  ['verb', '卖', 'mai4', ['продавать', 'продать']],
+  ['verb', '做', 'zuo4', ['делать', 'сделать']],
+  ['verb', '喜欢', 'xi3_huan5', ['нравиться', 'любить']],
+  ['verb', '知道', 'zhi1_dao4', ['знать']],
+  ['verb', '会', 'hui4', ['уметь', 'мочь']],
+  ['verb', '可以', 'ke3_yi3', ['можно', 'мочь'], 'два 3-х тона: звучит как ké yǐ'],
+  ['verb', '工作', 'gong1_zuo4', ['работа', 'работать']],
+  ['verb', '学习', 'xue2_xi2', ['учиться', 'учить', 'изучать', 'учёба']],
+  ['verb', '睡觉', 'shui4_jiao4', ['спать']],
+
+  ['adj', '大', 'da4', ['большой', 'крупный']],
+  ['adj', '小', 'xiao3', ['маленький', 'небольшой', 'малый']],
+  ['adj', '多', 'duo1', ['много']],
+  ['adj', '少', 'shao3', ['мало']],
+  ['adj', '贵', 'gui4', ['дорого', 'дорогой']],
+  ['adj', '便宜', 'pian2_yi5', ['дёшево', 'дешёвый']],
+  ['adj', '新', 'xin1', ['новый']],
+  ['adj', '快', 'kuai4', ['быстро', 'быстрый']],
+  ['adj', '慢', 'man4', ['медленно', 'медленный']],
+  ['adj', '热', 're4', ['жарко', 'горячий', 'жаркий']],
+  ['adj', '冷', 'leng3', ['холодно', 'холодный']],
+  ['adj', '忙', 'mang2', ['занят', 'занятой', 'занятый']],
+  ['adj', '漂亮', 'piao4_liang5', ['красивый', 'красиво']],
+
+  ['time', '今天', 'jin1_tian1', ['сегодня']],
+  ['time', '明天', 'ming2_tian1', ['завтра']],
+  ['time', '昨天', 'zuo2_tian1', ['вчера']],
+  ['time', '现在', 'xian4_zai4', ['сейчас', 'теперь']],
+  ['time', '早上', 'zao3_shang5', ['утро', 'утром']],
+  ['time', '晚上', 'wan3_shang5', ['вечер', 'вечером']],
+  ['time', '年', 'nian2', ['год']],
+  ['time', '月', 'yue4', ['месяц', 'луна']],
+  ['time', '天', 'tian1', ['день', 'небо']],
+  ['time', '小时', 'xiao3_shi2', ['час'], 'как отрезок времени'],
+  ['time', '分钟', 'fen1_zhong1', ['минута']],
+
+  ['ask', '什么', 'shen2_me5', ['что', 'какой']],
+  ['ask', '谁', 'shei2', ['кто']],
+  ['ask', '哪里', 'na3_li3', ['где', 'куда'], 'два 3-х тона: звучит как ná lǐ'],
+  ['ask', '几', 'ji3', ['сколько'], 'про небольшие числа, обычно до 10'],
+  ['ask', '多少', 'duo1_shao5', ['сколько']],
+  ['ask', '为什么', 'wei4_shen2_me5', ['почему', 'зачем']],
+  ['ask', '怎么', 'zen3_me5', ['как']],
+  ['ask', '什么时候', 'shen2_me5 shi2_hou5', ['когда']],
+  ['ask', '这个', 'zhe4_ge5', ['это', 'этот', 'вот этот', 'эта']],
+  ['ask', '那个', 'na4_ge5', ['тот', 'то', 'вон тот', 'та']],
+
+  ['place', '水', 'shui3', ['вода']],
+  ['place', '茶', 'cha2', ['чай']],
+  ['place', '咖啡', 'ka1_fei1', ['кофе']],
+  ['place', '米饭', 'mi3_fan4', ['рис'], 'варёный рис'],
+  ['place', '饭', 'fan4', ['еда', 'пища', 'рис']],
+  ['place', '中国', 'Zhong1_guo2', ['китай']],
+  ['place', '俄罗斯', 'E2_luo2_si1', ['россия']],
+  ['place', '中文', 'Zhong1_wen2', ['китайский язык', 'китайский']],
+  ['place', '啤酒', 'pi2_jiu3', ['пиво']],
+
+  ['city', '酒店', 'jiu3_dian4', ['отель', 'гостиница']],
+  ['city', '机场', 'ji1_chang3', ['аэропорт']],
+  ['city', '火车站', 'huo3_che1_zhan4', ['вокзал', 'железнодорожный вокзал', 'жд вокзал']],
+  ['city', '地铁', 'di4_tie3', ['метро']],
+  ['city', '出租车', 'chu1_zu1_che1', ['такси']],
+  ['city', '商店', 'shang1_dian4', ['магазин']],
+  ['city', '银行', 'yin2_hang2', ['банк']],
+  ['city', '医院', 'yi1_yuan4', ['больница']],
+  ['city', '厕所', 'ce4_suo3', ['туалет']],
+
+  ['trade', '钱', 'qian2', ['деньги']],
+  ['trade', '多少钱', 'duo1_shao5 qian2', ['сколько стоит', 'сколько денег', 'почём', 'какая цена']],
+  ['trade', '价格', 'jia4_ge2', ['цена', 'стоимость']],
+  ['trade', '样品', 'yang4_pin3', ['образец', 'образцы']],
+  ['trade', '质量', 'zhi4_liang4', ['качество']],
+  ['trade', '工厂', 'gong1_chang3', ['фабрика', 'завод']],
+  ['trade', '订单', 'ding4_dan1', ['заказ']],
+  ['trade', '发货', 'fa1_huo4', ['отгрузка', 'отгрузить', 'отправка', 'отправить товар']],
+  ['trade', '没问题', 'mei2 wen4_ti2', ['нет проблем', 'без проблем', 'не проблема']],
+  ['trade', '便宜一点', 'pian2_yi5 yi4_dian3', ['подешевле', 'дешевле', 'немного дешевле']],
+  ['trade', '太贵了', 'tai4 gui4 le5', ['слишком дорого', 'очень дорого', 'дороговато']],
+  ['trade', '数量', 'shu4_liang4', ['количество']],
+  ['trade', '公斤', 'gong1_jin1', ['килограмм', 'кг', 'кило']],
+  ['trade', '包装', 'bao1_zhuang1', ['упаковка', 'упаковывать']],
+  ['trade', '集装箱', 'ji2_zhuang1_xiang1', ['контейнер']],
+  ['trade', '交货', 'jiao1_huo4', ['поставка', 'поставить товар', 'доставка', 'сдать товар']],
+  ['trade', '合同', 'he2_tong5', ['договор', 'контракт']],
+  ['trade', '发票', 'fa1_piao4', ['инвойс', 'счёт-фактура', 'счет фактура', 'фапяо', 'счёт']],
+  ['trade', '付款', 'fu4_kuan3', ['оплата', 'платить', 'оплатить', 'платёж']],
+  ['trade', '定金', 'ding4_jin1', ['предоплата', 'задаток', 'аванс', 'депозит']],
+  ['trade', '公司', 'gong1_si1', ['компания', 'фирма']],
+  ['trade', '老板', 'lao3_ban3', ['босс', 'хозяин', 'начальник', 'владелец'], 'два 3-х тона: звучит как láo bǎn'],
+  ['trade', '问题', 'wen4_ti2', ['проблема', 'вопрос']],
+  ['trade', '微信', 'Wei1_xin4', ['вичат', 'wechat', 'вечат', 'ви чат']],
+];
+
+/* ---------- Пиньинь ---------- */
+const MARKS = { a: 'āáǎà', e: 'ēéěè', i: 'īíǐì', o: 'ōóǒò', u: 'ūúǔù', 'ü': 'ǖǘǚǜ' };
+const UNMARK = {};
+Object.keys(MARKS).forEach(v => [...MARKS[v]].forEach((c, k) => { UNMARK[c] = [v, k + 1]; }));
+const TONE_NAME = ['нейтральный', '1-й', '2-й', '3-й', '4-й'];
+const TONE_HINT = {
+  1: '1-й тон — высокий и ровный, тяните как ноту.',
+  2: '2-й тон — поднимается снизу вверх, как переспрос «да?».',
+  3: '3-й тон — низкий, голос проседает вниз.',
+  4: '4-й тон — резко падает сверху вниз, как команда «Стоп!».',
+  0: 'Нейтральный — короткий и лёгкий, без нажима.',
+};
+
+function parseNumSyl(x) {
+  const m = /^([A-Za-zÜüv]+?)([0-5])?$/.exec(String(x).trim());
+  if (!m) return null;
+  const cap = /^[A-Z]/.test(m[1]);
+  const base = m[1].toLowerCase().replace(/v/g, 'ü');
+  const t = m[2] === undefined ? 0 : +m[2];
+  return { base, tone: t === 5 ? 0 : t, cap };
+}
+function markTone(b, t) {
+  if (!t) return b;
+  let i = b.indexOf('a');
+  if (i < 0) i = b.indexOf('e');
+  if (i < 0 && b.includes('ou')) i = b.indexOf('o');
+  if (i < 0) for (let k = b.length - 1; k >= 0; k--) if ('aeiouü'.includes(b[k])) { i = k; break; }
+  if (i < 0) return b;
+  return b.slice(0, i) + MARKS[b[i]][t - 1] + b.slice(i + 1);
+}
+function sylText(s, k) {
+  let m = markTone(s.base, s.tone);
+  if (k > 0 && /^[aoe]/.test(s.base)) m = "'" + m;
+  if (s.cap) m = m[0].toUpperCase() + m.slice(1);
+  return m;
+}
+function pinyinPlain(spec) {
+  return spec.split(' ').map(w => w.split('_').map((x, k) => sylText(parseNumSyl(x), k)).join('')).join(' ');
+}
+function pinyinHtml(spec) {
+  return spec.split(' ').map(w => w.split('_').map((x, k) => {
+    const s = parseNumSyl(x);
+    return '<span class="s' + s.tone + '">' + esc(sylText(s, k)) + '</span>';
+  }).join('')).join(' ');
+}
+function sylsOf(spec) { return spec.split(/[ _]/).map(parseNumSyl).map(s => ({ base: s.base, tone: s.tone })); }
+function sylLabel(s) { return markTone(s.base, s.tone); }
+
+const WORDS = RAW.map(([t, h, s, r, n], i) => ({ id: h, i, t, h, s, syl: sylsOf(s), py: pinyinPlain(s), r, n: n || '' }));
+const BY_ID = Object.fromEntries(WORDS.map(w => [w.id, w]));
+const THEME_NAME = Object.fromEntries(THEMES.map(t => [t.id, t.name]));
+
+/* ---------- Проверка произношения ---------- */
+function numZh(n) {
+  const d = '零一二三四五六七八九';
+  if (n < 10) return d[n];
+  if (n < 20) return '十' + (n % 10 ? d[n % 10] : '');
+  if (n < 100) return d[Math.floor(n / 10)] + '十' + (n % 10 ? d[n % 10] : '');
+  if (n < 1000) { const r = n % 100; return d[Math.floor(n / 100)] + '百' + (r ? (r < 10 ? '零' + d[r] : (r < 20 ? '一' + numZh(r) : numZh(r))) : ''); }
+  if (n < 10000) { const r = n % 1000; return d[Math.floor(n / 1000)] + '千' + (r ? (r < 100 ? '零' + numZh(r) : numZh(r)) : ''); }
+  return String(n).split('').map(c => d[+c]).join('');
+}
+function cleanZh(t) {
+  return String(t).replace(/\d+/g, m => numZh(parseInt(m, 10))).replace(/[^\u3400-\u9fff]/g, '');
+}
+function heardSyls(zh) {
+  if (!window.pinyinPro) return null;
+  try {
+    return window.pinyinPro.pinyin(zh, { type: 'array', toneType: 'num', nonZh: 'removed' })
+      .map(parseNumSyl).filter(Boolean).map(s => ({ base: s.base, tone: s.tone }));
+  } catch (e) { return null; }
+}
+function toneOk(want, got, base) {
+  return want === 0 || got === 0 || want === got || base === 'yi' || base === 'bu';
+}
+function findSeq(hs, ts, withTone) {
+  for (let i = 0; i + ts.length <= hs.length; i++) {
+    let ok = true;
+    for (let j = 0; j < ts.length && ok; j++) {
+      const a = hs[i + j], b = ts[j];
+      ok = a.base === b.base && (!withTone || toneOk(b.tone, a.tone, b.base));
+    }
+    if (ok) return i;
+  }
+  return -1;
+}
+// Выравнивает услышанные слоги под ожидаемые: берёт окно с наибольшим числом совпадений
+function alignSyls(hs, ts) {
+  if (!hs || !hs.length) return ts.map(t => ({ want: t, got: null }));
+  if (hs.length >= ts.length) {
+    let best = 0, bestScore = -1;
+    for (let i = 0; i + ts.length <= hs.length; i++) {
+      let sc = 0;
+      ts.forEach((t, j) => { const h = hs[i + j]; if (h.base === t.base) sc += 2; else if (splitSyl(h.base)[1] === splitSyl(t.base)[1] || splitSyl(h.base)[0] === splitSyl(t.base)[0]) sc += 1; });
+      if (sc > bestScore) { bestScore = sc; best = i; }
+    }
+    return ts.map((t, j) => ({ want: t, got: hs[best + j] }));
+  }
+  return ts.map((t, j) => ({ want: t, got: hs[j] || null }));
+}
+const RANK = { none: 0, miss: 1, tone: 2, homo: 3, exact: 4 };
+function checkPron(word, alts) {
+  let best = { level: 'none', heard: '' };
+  for (const raw of alts || []) {
+    const plain = String(raw).replace(/[\s.,!?;:。，！？、…"'«»()-]/g, '');
+    if (!plain) continue;
+    if (/^\d+$/.test(plain) && word.r.includes(plain)) return { level: 'exact', heard: plain };
+    const zh = cleanZh(raw);
+    let cand;
+    if (!zh) cand = { level: 'miss', heard: String(raw).trim(), hs: [] };
+    else if (zh === word.h) return { level: 'exact', heard: zh };
+    else if (zh.includes(word.h)) cand = { level: 'exact', heard: zh, extra: true };
+    else {
+      const hs = heardSyls(zh);
+      if (!hs) cand = { level: 'miss', heard: zh, hs: null };
+      else if (findSeq(hs, word.syl, true) >= 0) cand = { level: 'homo', heard: zh, hs };
+      else if (findSeq(hs, word.syl, false) >= 0) cand = { level: 'tone', heard: zh, hs, pos: findSeq(hs, word.syl, false) };
+      else cand = { level: 'miss', heard: zh, hs };
+    }
+    if (RANK[cand.level] > RANK[best.level]) best = cand;
+  }
+  return best;
+}
+const INITIALS = ['zh', 'ch', 'sh', 'b', 'p', 'm', 'f', 'd', 't', 'n', 'l', 'g', 'k', 'h', 'j', 'q', 'x', 'r', 'z', 'c', 's', 'y', 'w'];
+function splitSyl(b) { for (const i of INITIALS) if (b.startsWith(i)) return [i, b.slice(i.length)]; return ['', b]; }
+const INIT_HINTS = {
+  'z/zh': 'zh — твёрдое «дж», кончик языка загнут к нёбу; z — «дз», язык у верхних зубов.',
+  'c/ch': 'ch — твёрдое «ч» с загнутым языком и выдохом; c — «ц» с выдохом.',
+  's/sh': 'sh — твёрдое «ш», кончик языка загнут; s — обычное «с».',
+  'sh/x': 'x — мягкое «сь», губы в улыбке; sh — твёрдое «ш», язык загнут.',
+  'ch/q': 'q — мягкое «ць» с выдохом, губы в улыбке; ch — твёрдое «ч», язык загнут.',
+  'j/zh': 'j — мягкое «дзь», губы в улыбке; zh — твёрдое «дж», язык загнут.',
+  'j/q': 'q — с сильным выдохом; j — без выдоха.',
+  'c/z': 'c — с сильным выдохом; z — без выдоха.',
+  'ch/zh': 'ch — с сильным выдохом; zh — без выдоха.',
+  'b/p': 'p — с сильным выдохом (ладонь у рта чувствует струю воздуха); b — без выдоха.',
+  'd/t': 't — с сильным выдохом; d — без выдоха.',
+  'g/k': 'k — с сильным выдохом; g — без выдоха.',
+  'l/r': 'r — как мягкое «ж» без шипения, язык загнут; l — обычное «л».',
+  'l/n': 'n — носовое «н»; l — «л».',
+  'f/h': 'h — хриплое «х» из горла; f — «ф».',
+  'h/k': 'h — фрикативное «х»; k — взрывное «к» с выдохом.',
+};
+function finalHint(a, b) {
+  const [x, y] = [a, b].sort((p, q) => p.length - q.length);
+  if (y === x + 'g' && x.endsWith('n')) return '-n — кончик языка у зубов, как русское «н»; -ng — звук уходит в нос, корень языка поднят, как в английском «sing».';
+  if ((a.includes('ü') && b.replace('u', 'ü') === a) || (b.includes('ü') && a.replace('u', 'ü') === b)) return 'ü — губы трубочкой, а язык как для «и», звук похож на «ю» без «й».';
+  if ((a === 'e' && b === 'o') || (a === 'o' && b === 'e')) return 'e — задний звук между «э» и «ы», губы не округлены; o — «о».';
+  return '';
+}
+function describeSyl(want, got) {
+  if (!got) return { bad: true, kind: 'missing', text: 'не расслышан слог ' + sylLabel(want) };
+  if (want.base === got.base) {
+    if (toneOk(want.tone, got.tone, want.base)) return { bad: false };
+    return { bad: true, kind: 'tone', tone: want.tone, text: sylLabel(want) + ': прозвучал ' + TONE_NAME[got.tone] + ' тон вместо ' + TONE_NAME[want.tone] + '. ' + TONE_HINT[want.tone] };
+  }
+  const [wi, wf] = splitSyl(want.base), [gi, gf] = splitSyl(got.base);
+  const parts = [];
+  let pair = null;
+  if (wi !== gi) {
+    pair = [wi || '—', gi || '—'].sort().join('/');
+    const hint = INIT_HINTS[[wi, gi].sort().join('/')];
+    parts.push('согласная «' + (wi || '—') + '», а прозвучало «' + (gi || '—') + '»' + (hint ? '. ' + hint : ''));
+  }
+  if (wf !== gf) {
+    const hint = finalHint(wf, gf);
+    if (!pair) pair = [wf, gf].sort().join('/');
+    parts.push('гласная часть «' + wf + '», а прозвучало «' + gf + '»' + (hint ? '. ' + hint : ''));
+  }
+  return { bad: true, kind: 'sound', pair, text: sylLabel(want) + ' → ' + sylLabel(got) + ': ' + parts.join('; ') };
+}
+
+/* ---------- Проверка ввода пиньинем (режим с клавиатурой) ---------- */
+function checkTyped(word, input) {
+  const s = String(input).toLowerCase().normalize('NFC').replace(/u:/g, 'ü').replace(/v/g, 'ü');
+  const tones = [];
+  let letters = '';
+  for (const ch of s) {
+    if (UNMARK[ch]) { letters += UNMARK[ch][0]; tones.push(UNMARK[ch][1]); }
+    else if (/[0-5]/.test(ch)) tones.push(+ch === 5 ? 0 : +ch);
+    else if (/[a-zü]/.test(ch)) letters += ch;
+  }
+  const want = word.syl.map(x => x.base).join('');
+  const wantT = word.syl.map(x => x.tone);
+  if (!letters) return { level: 'none' };
+  if (letters !== want) return { level: 'miss', letters, want };
+  if (!tones.length) return { level: 'notones' };
+  let cmp;
+  if (tones.length === wantT.length) cmp = wantT;
+  else {
+    cmp = wantT.filter(t => t !== 0);
+    if (tones.length !== cmp.length) return { level: 'tonecount' };
+  }
+  const bases = tones.length === wantT.length ? word.syl.map(x => x.base) : word.syl.filter(x => x.tone !== 0).map(x => x.base);
+  // 3-й тон перед 3-м произносится как 2-й (ní hǎo) — принимаем и такую запись
+  const ok = cmp.every((t, k) => t === 0 || t === tones[k] || bases[k] === 'yi' || bases[k] === 'bu' || (t === 3 && tones[k] === 2 && cmp[k + 1] === 3));
+  return ok ? { level: 'exact' } : { level: 'tone', tones, want: cmp };
+}
+
+/* ---------- Проверка перевода ---------- */
+const FILLER = new Set(['это', 'ну', 'э', 'эм', 'ммм', 'значит', 'наверное', 'кажется', 'вроде', 'типа', 'слово', 'переводится', 'как', 'означает']);
+function normRu(s) {
+  return String(s).toLowerCase().replace(/ё/g, 'е').replace(/[^a-zа-я0-9]+/g, ' ').trim();
+}
+function lev(a, b) {
+  if (a === b) return 0;
+  const m = a.length, n = b.length;
+  if (!m) return n; if (!n) return m;
+  let prev = Array.from({ length: n + 1 }, (_, j) => j);
+  for (let i = 1; i <= m; i++) {
+    const cur = [i];
+    for (let j = 1; j <= n; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[n];
+}
+function answersFor(word, strictHanzi) {
+  if (strictHanzi) return word.r;
+  // Без иероглифов слова-омофоны (他/她) на слух не различить — принимаем переводы любого из них
+  const key = word.syl.map(s => s.base + s.tone).join(' ');
+  const out = [...word.r];
+  WORDS.forEach(w => { if (w !== word && w.syl.map(s => s.base + s.tone).join(' ') === key) out.push(...w.r); });
+  return out;
+}
+function checkTranslation(word, alts, strictHanzi) {
+  const answers = answersFor(word, strictHanzi);
+  const A = answers.map(a => ({ raw: a, n: normRu(a) }));
+  let best = { level: 'none', heard: '' };
+  for (const raw of alts || []) {
+    const full = normRu(raw);
+    if (!full) continue;
+    if (/^(не знаю|не помню|без понятия|пропусти(ть)?|дальше)$/.test(full)) { if (best.level === 'none') best = { level: 'dontknow', heard: raw }; continue; }
+    const words = full.split(' ');
+    const core = words.filter(w => !FILLER.has(w));
+    const h = (core.length ? core : words).join(' ');
+    for (const a of A) {
+      if (h === a.n || full === a.n || (' ' + full + ' ').includes(' ' + a.n + ' ')) return { level: 'exact', heard: raw, match: a.raw };
+    }
+    for (const a of A) {
+      if (a.n.includes(' ')) {
+        if (lev(h, a.n) <= Math.floor(a.n.length * 0.2)) { best = { level: 'fuzzy', heard: raw, match: a.raw }; }
+        continue;
+      }
+      // Распознавание выдаёт настоящие слова, а не опечатки, поэтому засчитываем только другую форму того же слова:
+      // общая основа от 4 букв, отличаются лишь окончания (работаю ≈ работать, большая ≈ большой)
+      for (const w of (core.length ? core : words)) {
+        let pre = 0; while (pre < w.length && pre < a.n.length && w[pre] === a.n[pre]) pre++;
+        if (pre >= 4 && a.n.length - pre <= 2 && w.length - pre <= 3) { if (best.level !== 'fuzzy') best = { level: 'fuzzy', heard: raw, match: a.raw }; }
+      }
+    }
+    if (best.level === 'none') best = { level: 'wrong', heard: raw };
+  }
+  return best;
+}
+
+/* ---------- Хранилище ---------- */
+const KEY_SET = 'kv.settings.v1', KEY_PROG = 'kv.progress.v1', KEY_STATS = 'kv.stats.v1';
+function load(key, def) { try { const v = localStorage.getItem(key); return v ? Object.assign(def, JSON.parse(v)) : def; } catch (e) { return def; } }
+function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* хранилище недоступно */ } }
+const DEFAULTS = () => ({ themes: THEMES.map(t => t.id), roundSize: 10, newPerRound: 4, showHanzi: true, showPinyin: true, rate: 0.8, autoMic: true, autoNext: true, input: 'voice', voiceURI: '', direction: 'mix', beep: false, meaning: 'after' });
+let ST = load(KEY_STATS, { days: {}, tones: {}, pairs: {} });
+ST.days = ST.days || {}; ST.tones = ST.tones || {}; ST.pairs = ST.pairs || {};
+function dayKey(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function noteDay() { const k = dayKey(); ST.days[k] = (ST.days[k] || 0) + 1; save(KEY_STATS, ST); }
+function streak() {
+  let n = 0; const d = new Date();
+  if (!ST.days[dayKey(d)]) d.setDate(d.getDate() - 1);
+  while (ST.days[dayKey(d)]) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+const DAY = 864e5;
+const INTERVAL = [0, 0, DAY, 3 * DAY, 7 * DAY, 21 * DAY];
+
+/* ---------- Состояние ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+const S = {
+  screen: 'home',
+  set: load(KEY_SET, DEFAULTS()),
+  prog: load(KEY_PROG, {}),
+  round: null,
+  card: null,
+  listening: null,
+  speaking: false,
+  micBlocked: false,
+  micTest: null,
+  resetArm: false,
+  note: '',
+  backupText: '',
+  startOpen: false,
+  inFrame: (() => { try { return window.self !== window.top; } catch (e) { return true; } })(),
+};
+S.set.themes = S.set.themes.filter(id => THEME_NAME[id]);
+if (!S.set.themes.length) S.set.themes = THEMES.map(t => t.id);
+if (!['mix', 'zh', 'ru'].includes(S.set.direction)) S.set.direction = 'mix';
+if (!['after', 'always'].includes(S.set.meaning)) S.set.meaning = 'after';
+function useVoice() { return !!SR && !S.micBlocked && S.set.input !== 'text'; }
+function P(id) { return S.prog[id] || null; }
+
+/* ---------- Озвучка ---------- */
+let utter = null;
+function zhVoices() {
+  const ss = window.speechSynthesis;
+  if (!ss) return [];
+  return ss.getVoices().filter(v => {
+    const l = v.lang.replace('_', '-').toLowerCase();
+    return (l === 'zh-cn' || l === 'zh' || l.startsWith('zh-hans') || l.startsWith('cmn')) && !/hk|tw|yue/.test(l);
+  });
+}
+function pickVoice() {
+  const vs = zhVoices();
+  if (!vs.length) return null;
+  return vs.find(v => v.voiceURI === S.set.voiceURI)
+    || vs.find(v => /google/i.test(v.name))
+    || vs.find(v => /ting|xiaoxiao|yunxi|li-?mu|yu-?shu/i.test(v.name))
+    || vs[0];
+}
+function ruVoice() {
+  const ss = window.speechSynthesis;
+  if (!ss) return null;
+  const vs = ss.getVoices().filter(v => /^ru/i.test(v.lang));
+  return vs.find(v => /google/i.test(v.name)) || vs[0] || null;
+}
+function speak(text, rate, lang) {
+  return new Promise(resolve => {
+    const ss = window.speechSynthesis;
+    if (!ss || !window.SpeechSynthesisUtterance) { resolve(false); return; }
+    try { ss.cancel(); } catch (e) { /* нет активной речи */ }
+    const u = new SpeechSynthesisUtterance(text);
+    utter = u;
+    u.lang = lang || 'zh-CN';
+    const v = lang === 'ru-RU' ? ruVoice() : pickVoice();
+    if (v) u.voice = v;
+    u.rate = rate || S.set.rate;
+    let done = false;
+    // Отменённая предыдущая фраза не должна сбрасывать флаг текущей
+    const fin = ok => { if (done) return; done = true; clearTimeout(t); if (utter === u) S.speaking = false; resolve(ok); };
+    const t = setTimeout(() => fin(true), 1800 + text.length * 900 / u.rate);
+    u.onend = () => fin(true);
+    u.onerror = () => fin(false);
+    S.speaking = true;
+    try { ss.speak(u); } catch (e) { fin(false); }
+  });
+}
+
+/* ---------- Экран не гаснет во время раунда; сигнал микрофона ---------- */
+let wl = null;
+function wakeOn() {
+  try {
+    if (!navigator.wakeLock || wl) return;
+    navigator.wakeLock.request('screen').then(l => { wl = l; l.addEventListener('release', () => { if (wl === l) wl = null; }); }, () => { wl = null; });
+  } catch (e) { wl = null; }
+}
+function wakeOff() { try { if (wl) { wl.release(); wl = null; } } catch (e) { wl = null; } }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.screen === 'card') wakeOn(); });
+let ac = null;
+function ensureAudio() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!ac) ac = new AC();
+    if (ac.state === 'suspended') ac.resume();
+  } catch (e) { ac = null; }
+}
+function beep() {
+  if (!S.set.beep || !ac) return;
+  try {
+    const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+    o.frequency.value = 880; o.connect(g); g.connect(ac.destination);
+    g.gain.setValueAtTime(0.08, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.start(t); o.stop(t + 0.13);
+  } catch (e) { /* звук не обязателен */ }
+}
+if (window.speechSynthesis) {
+  try { window.speechSynthesis.onvoiceschanged = () => { if (S.screen === 'home' || S.screen === 'settings') render(); }; } catch (e) { /* старый браузер */ }
+}
+
+/* ---------- Распознавание речи ---------- */
+let rec = null;
+function listen(lang, onInterim) {
+  return new Promise(resolve => {
+    let R;
+    try { R = new SR(); } catch (e) { resolve({ alts: [], error: 'start-failed' }); return; }
+    rec = R;
+    R.lang = lang; R.interimResults = true; R.maxAlternatives = 5; R.continuous = false;
+    let finals = null, interim = '', error = null, done = false, quiet = null, guard = null;
+    const stop = () => { try { R.stop(); } catch (e) { /* уже остановлено */ } guard = guard || setTimeout(finish, 1500); };
+    const hard = setTimeout(stop, 9000);
+    function finish() {
+      if (done) return;
+      done = true; clearTimeout(hard); clearTimeout(quiet); clearTimeout(guard);
+      if (rec === R) rec = null;
+      if (R.kvAborted) { resolve({ alts: [], error: 'aborted' }); return; }
+      resolve({ alts: finals || (interim ? [interim] : []), error: finals || interim ? null : error });
+    }
+    R.onresult = e => {
+      let txt = '';
+      for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript;
+      const last = e.results[e.results.length - 1];
+      if (last.isFinal) {
+        const alts = [];
+        for (let k = 0; k < last.length; k++) alts.push(last[k].transcript);
+        finals = e.results.length > 1 ? [txt, ...alts] : alts;
+        stop();
+      } else interim = txt;
+      if (onInterim) onInterim(txt);
+      clearTimeout(quiet);
+      quiet = setTimeout(stop, 1600);
+    };
+    R.onerror = e => { error = e.error || 'error'; };
+    R.onend = finish;
+    try { R.start(); } catch (e) { error = 'start-failed'; finish(); }
+  });
+}
+function abortListening() {
+  if (!rec) return;
+  const R = rec;
+  R.kvAborted = true;
+  try { R.abort(); } catch (e) { /* уже остановлено */ }
+  setTimeout(() => { if (R.onend) R.onend(); }, 600);
+}
+const ERR_TEXT = {
+  'no-speech': 'Не услышал речь. Нажмите на микрофон и говорите сразу.',
+  'audio-capture': 'Микрофон не найден. Проверьте, что он подключён.',
+  'network': 'Распознавание речи работает через интернет. Проверьте соединение.',
+  'language-not-supported': 'Браузер не распознаёт этот язык. На iPhone и Mac включите Диктовку в настройках.',
+  'start-failed': 'Не удалось включить микрофон.',
+  'aborted': 'Запись остановлена.',
+};
+
+/* ---------- Раунд ---------- */
+function dirFor(w) {
+  if (S.set.direction === 'ru') return 'ru';
+  if (S.set.direction === 'mix' && P(w.id) && P(w.id).box >= 3) return 'ru';
+  return 'zh';
+}
+function buildRound(ids) {
+  if (ids && ids.length) {
+    const queue = shuffle(ids.slice()).slice(0, S.set.roundSize).map(id => ({ id, mode: 'review', dir: dirFor(BY_ID[id]) }));
+    return { queue, idx: 0, first: {}, final: {}, order: [] };
+  }
+  const now = Date.now();
+  let pool = WORDS.filter(w => S.set.themes.includes(w.t));
+  if (!pool.length) pool = WORDS;
+  const N = S.set.roundSize;
+  const seen = pool.filter(w => P(w.id));
+  const fresh = pool.filter(w => !P(w.id));
+  const due = seen.filter(w => now - P(w.id).last >= INTERVAL[P(w.id).box]).sort((a, b) => (P(a.id).box - P(b.id).box) || (P(a.id).last - P(b.id).last));
+  const nNew = Math.min(S.set.newPerRound, fresh.length);
+  const reviews = due.slice(0, Math.max(0, N - nNew));
+  let news = fresh.slice(0, nNew);
+  if (reviews.length + news.length < N) {
+    // Не хватает слов к повторению: добираем давно не повторявшиеся
+    const rest = seen.filter(w => !reviews.includes(w)).sort((a, b) => P(a.id).last - P(b.id).last);
+    reviews.push(...rest.slice(0, N - reviews.length - news.length));
+  }
+  // Изученных слов всё ещё мало (начало обучения): дополняем раунд новыми сверх настройки
+  if (reviews.length + news.length < N) news = fresh.slice(0, N - reviews.length);
+  shuffle(reviews);
+  const queue = [];
+  let r = 0, n = 0;
+  while (r < reviews.length || n < news.length) {
+    if (r < reviews.length) { const w = reviews[r++]; queue.push({ id: w.id, mode: 'review', dir: dirFor(w) }); }
+    if (n < news.length) queue.push({ id: news[n++].id, mode: 'intro' });
+  }
+  return { queue, idx: 0, first: {}, final: {}, order: [] };
+}
+function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+function insertLater(item, gap) {
+  const q = S.round.queue;
+  q.splice(Math.min(S.round.idx + gap, q.length), 0, item);
+}
+function grade(id, ok) {
+  const R = S.round;
+  if (!(id in R.first)) {
+    R.first[id] = ok;
+    R.order.push(id);
+    const p = P(id) || { box: 0, last: 0, seen: 0, wrong: 0 };
+    p.box = ok ? Math.min(5, p.box + 1) : 1;
+    p.seen++; if (!ok) p.wrong++;
+    p.last = Date.now();
+    S.prog[id] = p;
+    save(KEY_PROG, S.prog);
+    noteDay();
+  }
+  R.final[id] = ok;
+}
+// Статистика ошибок произношения: по тонам и по парам звуков
+function recordErr(w, res) {
+  if (!res || !res.hs || !res.hs.length) return;
+  const al = res.level === 'tone' ? w.syl.map((t, j) => ({ want: t, got: res.hs[res.pos + j] })) : alignSyls(res.hs, w.syl);
+  const p = S.prog[w.id] || (S.prog[w.id] = { box: 0, last: 0, seen: 0, wrong: 0 });
+  al.forEach(x => {
+    const d = describeSyl(x.want, x.got);
+    if (!d.bad) return;
+    if (d.kind === 'tone') { p.te = (p.te || 0) + 1; ST.tones[d.tone] = (ST.tones[d.tone] || 0) + 1; }
+    else if (d.kind === 'sound') { p.se = (p.se || 0) + 1; if (d.pair) ST.pairs[d.pair] = (ST.pairs[d.pair] || 0) + 1; }
+  });
+  save(KEY_PROG, S.prog); save(KEY_STATS, ST);
+}
+function hardWords() {
+  const score = w => { const p = P(w.id); return p ? p.wrong + (p.te || 0) + (p.se || 0) : 0; };
+  return WORDS.filter(w => score(w) >= 2).sort((a, b) => score(b) - score(a)).slice(0, 8);
+}
+function dueCount() { const now = Date.now(); return WORDS.filter(w => P(w.id) && now - P(w.id).last >= INTERVAL[P(w.id).box]).length; }
+
+/* ---------- Карточка ---------- */
+let timers = [];
+function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+function curItem() { return S.round.queue[S.round.idx]; }
+function curWord() { return BY_ID[curItem().id]; }
+
+function startRound(ids) {
+  S.round = buildRound(ids);
+  if (!S.round.queue.length) return;
+  S.screen = 'card';
+  wakeOn();
+  startCard();
+}
+function startCard() {
+  clearTimers();
+  abortListening();
+  const item = curItem();
+  const dir = item.dir === 'ru' ? 'ru' : 'zh';
+  S.card = { phase: dir === 'ru' ? 'say' : 'repeat', dir, attempts: 0, tr: 0, fb: null, pron: null, live: '', reveal: false };
+  render();
+  playThenListen();
+}
+function playThenListen(slow) {
+  const w = curWord();
+  const c = S.card;
+  abortListening();
+  // В обратном режиме задание — перевод по-русски; китайское слово не озвучиваем до ответа
+  const p = c.phase === 'say'
+    ? (ruVoice() ? speak(w.r[0], 1, 'ru-RU') : Promise.resolve(false))
+    : speak(w.h, slow ? Math.max(0.45, S.set.rate - 0.3) : S.set.rate);
+  p.then(() => {
+    if (S.card !== c || S.screen !== 'card') return;
+    render();
+    if (S.set.autoMic && useVoice() && (c.phase === 'repeat' || c.phase === 'translate' || c.phase === 'say')) later(() => { if (S.card === c && !S.listening) startListening(false); }, 350);
+  });
+  render();
+}
+function startListening(byUser) {
+  const c = S.card;
+  if (!c || S.listening || !useVoice()) return;
+  if (S.speaking && window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ } S.speaking = false; }
+  const phase = c.phase;
+  const lang = phase === 'translate' ? 'ru-RU' : 'zh-CN';
+  S.listening = phase;
+  c.live = '';
+  render();
+  beep();
+  listen(lang, txt => { c.live = txt; const el = document.getElementById('live'); if (el) el.textContent = 'Слышу: ' + txt; }).then(res => {
+    S.listening = null;
+    if (S.card !== c || S.screen !== 'card') return;
+    if (res.error && !res.alts.length) {
+      if (res.error === 'not-allowed' || res.error === 'service-not-allowed') {
+        if (byUser || S.inFrame) {
+          S.micBlocked = true;
+          c.fb = { kind: 'warn', tag: 'Микрофон недоступен', lines: [S.inFrame
+            ? 'В этом встроенном окне браузер не даёт доступ к микрофону. Отвечайте с клавиатуры или откройте полную версию страницы.'
+            : 'Разрешите доступ к микрофону для этой страницы в настройках браузера. Пока отвечайте с клавиатуры.'] };
+        } else {
+          c.fb = { kind: 'info', tag: 'Нажмите на микрофон', lines: ['Браузер не включил микрофон сам — нажмите на кнопку.'] };
+        }
+      } else if (res.error !== 'aborted') {
+        c.fb = { kind: 'warn', tag: 'Не получилось', lines: [ERR_TEXT[res.error] || ('Ошибка распознавания: ' + res.error)] };
+      }
+      render();
+      return;
+    }
+    if (c.phase !== phase) { render(); return; }
+    if (phase === 'repeat') onPron(checkPron(curWord(), res.alts));
+    else if (phase === 'say') onSay(checkPron(curWord(), res.alts));
+    else if (phase === 'translate') onTranslate(checkTranslation(curWord(), res.alts, S.set.showHanzi));
+  });
+}
+
+function zhSpan(t) { return '<span class="zh">' + esc(t) + '</span>'; }
+function pySpan(t) { return '<span class="pyi">' + esc(t) + '</span>'; }
+
+function onPron(res) {
+  const c = S.card, w = curWord();
+  c.attempts++;
+  if (res.level === 'exact' || res.level === 'homo') {
+    c.pron = 'ok';
+    c.fb = { kind: 'ok', tag: 'Произношение: верно', lines: [res.level === 'exact'
+      ? 'Распознано: ' + zhSpan(res.heard)
+      : 'Распознано как ' + zhSpan(res.heard) + ' — звучит так же, засчитано.'] };
+    advanceAfterPron();
+    return;
+  }
+  const lines = [];
+  if (res.level === 'none') lines.push('Ничего не распознано. Скажите громче и ближе к микрофону.');
+  else {
+    const hsText = res.hs && res.hs.length ? ' (' + pySpan(res.hs.map(sylLabel).join(' ')) + ')' : '';
+    lines.push('Распознано: ' + zhSpan(res.heard) + hsText + '. Нужно: ' + zhSpan(w.h) + ' (' + pySpan(w.py) + ').');
+    if (res.hs) {
+      const al = res.level === 'tone' ? w.syl.map((t, j) => ({ want: t, got: res.hs[res.pos + j] })) : alignSyls(res.hs, w.syl);
+      const errs = al.map(x => describeSyl(x.want, x.got)).filter(d => d.bad);
+      errs.slice(0, 2).forEach(d => lines.push(esc(d.text)));
+    } else if (!window.pinyinPro) {
+      lines.push('Подробный разбор недоступен: не загрузилась библиотека пиньиня.');
+    }
+  }
+  recordErr(w, res);
+  c.fb = { kind: res.level === 'tone' ? 'warn' : 'bad', tag: res.level === 'tone' ? 'Проверьте тон' : 'Не совпало', lines };
+  if (c.attempts >= 3) c.fb.lines.push('Три попытки — можно перейти дальше и вернуться к слову позже.');
+  render();
+}
+/* Обратный режим: показан перевод, нужно сказать слово по-китайски */
+function sayOk(res, manual) {
+  const c = S.card, w = curWord();
+  c.pron = 'ok'; c.phase = 'result'; c.reveal = true;
+  finishCard(true);
+  c.fb = { kind: manual ? 'info' : 'ok', tag: manual ? 'Засчитано вручную' : 'Верно', lines: [(res && res.heard ? 'Распознано: ' + zhSpan(res.heard) + '. ' : '') + zhSpan(w.h) + ' ' + pySpan(w.py)] };
+  render();
+  speak(w.h);
+  if (S.set.autoNext) later(() => { if (S.card === c && c.phase === 'result') next(); }, 2400);
+}
+function onSay(res) {
+  const c = S.card, w = curWord();
+  c.attempts++;
+  if (res.level === 'exact' || res.level === 'homo') { sayOk(res, false); return; }
+  const lines = [];
+  const hsText = res.hs && res.hs.length ? ' (' + pySpan(res.hs.map(sylLabel).join(' ')) + ')' : '';
+  if (res.level === 'none') lines.push('Ничего не распознано. Скажите громче и ближе к микрофону.');
+  else if (res.level === 'tone') {
+    lines.push('Распознано: ' + zhSpan(res.heard) + hsText + '. Слоги верные, проверьте тон: ' + pySpan(w.py) + '.');
+    w.syl.map((t, j) => describeSyl(t, res.hs[res.pos + j])).filter(d => d.bad).slice(0, 2).forEach(d => lines.push(esc(d.text)));
+  } else lines.push('Распознано: ' + zhSpan(res.heard) + hsText + '. Это другое слово.');
+  recordErr(w, res);
+  c.fb = { kind: res.level === 'tone' ? 'warn' : 'bad', tag: res.level === 'tone' ? 'Проверьте тон' : 'Не совпало', lines };
+  if (c.attempts >= 3) c.fb.lines.push('Три попытки — нажмите «Показать ответ».');
+  render();
+}
+function revealSay() {
+  const c = S.card, w = curWord();
+  c.phase = 'result'; c.reveal = true; c.pron = 'weak';
+  finishCard(false);
+  c.fb = { kind: 'bad', tag: 'Ответ', lines: [zhSpan(w.h) + ' ' + pySpan(w.py) + ' — ' + esc(w.r[0]), 'Слово вернётся в конце раунда.'] };
+  render();
+  speak(w.h);
+}
+function advanceAfterPron() {
+  const c = S.card;
+  const mode = curItem().mode;
+  render();
+  later(() => {
+    if (S.card !== c) return;
+    if (mode === 'intro') { c.phase = 'reveal'; c.reveal = true; render(); return; }
+    // Перевод уже был на экране: спрашивать его бессмысленно
+    if (c.peek || S.set.meaning === 'always') {
+      c.phase = 'result'; c.reveal = true;
+      const ok = !c.peek && c.pron === 'ok';
+      finishCard(ok);
+      if (c.peek) c.fb = { kind: 'info', tag: 'Перевод подсмотрен', lines: ['Слово вернётся в конце раунда, чтобы закрепить.'] };
+      render();
+      if (ok && S.set.autoNext) later(() => { if (S.card === c && c.phase === 'result') next(); }, 2500);
+      return;
+    }
+    c.phase = 'translate';
+    render();
+    if (S.set.autoMic && useVoice()) later(() => { if (S.card === c && !S.listening) startListening(false); }, 450);
+  }, 900);
+}
+function peek() {
+  const c = S.card;
+  if (!c || c.peek) return;
+  c.peek = true;
+  if (c.phase === 'translate') { clearTimers(); abortListening(); onTranslate({ level: 'dontknow' }); return; }
+  render();
+}
+function acceptPron() {
+  const c = S.card;
+  if (c.phase === 'say') { sayOk(null, true); return; }
+  c.pron = c.attempts >= 3 && c.fb && c.fb.kind !== 'ok' ? 'weak' : 'ok';
+  c.fb = { kind: 'info', tag: 'Засчитано вручную', lines: ['Если распознавание ошиблось, а вы уверены в произношении — двигаемся дальше.'] };
+  advanceAfterPron();
+}
+function skipPron() {
+  const c = S.card;
+  c.pron = 'weak';
+  c.fb = { kind: 'info', tag: 'Идём дальше', lines: ['Слово вернётся в следующих раундах.'] };
+  advanceAfterPron();
+}
+function onTranslate(res) {
+  const c = S.card, w = curWord();
+  c.tr++;
+  const main = esc(w.r[0]) + (w.r.length > 1 ? ' <span class="muted">(также: ' + esc(w.r.slice(1).filter(x => !/^\d+$/.test(x)).join(', ')) + ')</span>' : '');
+  if (res.level === 'exact' || res.level === 'fuzzy') {
+    c.phase = 'result'; c.reveal = true;
+    const ok = c.pron === 'ok';
+    finishCard(ok);
+    c.fb = { kind: 'ok', tag: 'Перевод: верно', lines: [res.level === 'exact'
+      ? 'Вы сказали: «' + esc(res.heard) + '». Правильно: ' + main
+      : 'Засчитано: «' + esc(res.heard) + '» близко к «' + esc(res.match) + '». Правильно: ' + main] };
+    if (!ok) c.fb.lines.push('Произношение ещё нужно подтянуть — слово вернётся в повторение.');
+    render();
+    if (S.set.autoNext) { const cc = c; later(() => { if (S.card === cc && S.card.phase === 'result') next(); }, 2500); }
+    return;
+  }
+  if (res.level === 'dontknow') { failTranslation('Правильно: ' + main, true); return; }
+  const said = res.level === 'none' ? 'Ничего не распознано.' : 'Вы сказали: «' + esc(res.heard) + '».';
+  if (c.tr < 2 && res.level === 'none') {
+    c.fb = { kind: 'warn', tag: 'Не расслышал', lines: [said + ' Попробуйте ещё раз.'] };
+    render();
+    return;
+  }
+  failTranslation(said + ' Правильно: ' + main);
+}
+function failTranslation(line, noAnswer) {
+  const c = S.card;
+  c.phase = 'result'; c.reveal = true; c.trFail = !noAnswer;
+  finishCard(false);
+  c.fb = { kind: 'bad', tag: noAnswer ? 'Перевод' : 'Перевод: неверно', lines: [line, 'Слово вернётся в конце раунда.'] };
+  render();
+  speak(curWord().h);
+}
+function overrideTranslation() {
+  const c = S.card, R = S.round, id = curItem().id;
+  const ok = c.pron === 'ok';
+  c.trFail = false;
+  if (!ok) {
+    c.fb = { kind: 'info', tag: 'Перевод засчитан', lines: ['Слово всё равно вернётся: произношение ещё не засчитано.'] };
+    render();
+    return;
+  }
+  // Распознавание ошиблось, пользователь подтвердил верный ответ: отменяем штраф
+  if (c.firstGrade) {
+    R.first[id] = true;
+    const p = P(id);
+    if (p) { p.box = Math.min(5, c.prevBox + 1); p.wrong = Math.max(0, p.wrong - 1); save(KEY_PROG, S.prog); }
+  }
+  R.final[id] = true;
+  if (c.requeuedNow) {
+    const q = R.queue;
+    for (let i = q.length - 1; i > R.idx; i--) if (q[i].id === id && q[i].requeued) { q.splice(i, 1); break; }
+  }
+  c.fb = { kind: 'info', tag: 'Засчитано вручную', lines: ['Перевод засчитан.'] };
+  render();
+}
+function finishCard(ok) {
+  const item = curItem(), c = S.card, R = S.round;
+  c.firstGrade = item.mode !== 'intro' && !(item.id in R.first);
+  if (c.firstGrade) { const p = P(item.id); c.prevBox = p ? p.box : 0; }
+  if (item.mode !== 'intro') grade(item.id, ok);
+  if (!ok && !item.requeued) { insertLater({ id: item.id, mode: 'review', requeued: true }, 4); c.requeuedNow = true; }
+}
+function finishIntro() {
+  const item = curItem();
+  if (!P(item.id)) { S.prog[item.id] = { box: 0, last: Date.now(), seen: 0, wrong: 0 }; save(KEY_PROG, S.prog); }
+  insertLater({ id: item.id, mode: 'recall' }, 3);
+  next();
+}
+function next() {
+  clearTimers();
+  abortListening();
+  S.round.idx++;
+  if (S.round.idx >= S.round.queue.length) { S.screen = 'summary'; S.card = null; wakeOff(); render(); return; }
+  startCard();
+}
+function submitTyped(value) {
+  const c = S.card, w = curWord();
+  if (c.phase === 'say') {
+    const r = checkTyped(w, value);
+    c.attempts++;
+    if (r.level === 'exact' || r.level === 'notones') { sayOk(null, false); return; }
+    const lines = [];
+    if (r.level === 'none') lines.push('Введите слоги латиницей, например: ni3 hao3.');
+    else if (r.level === 'miss') lines.push('У вас: ' + pySpan(r.letters) + '. Это другое слово.');
+    else if (r.level === 'tonecount') lines.push('Слоги верные, но число тонов не совпадает со слогами.');
+    else lines.push('Слоги верные. Тоны: нужно ' + r.want.map(t => TONE_NAME[t]).join(', ') + ', у вас ' + r.tones.map(t => TONE_NAME[t]).join(', ') + '.');
+    c.fb = { kind: r.level === 'miss' || r.level === 'none' ? 'bad' : 'warn', tag: 'Не совпало', lines };
+    if (c.attempts >= 3) c.fb.lines.push('Три попытки — нажмите «Показать ответ».');
+    render();
+    return;
+  }
+  if (c.phase === 'repeat') {
+    const r = checkTyped(w, value);
+    c.attempts++;
+    if (r.level === 'exact' || r.level === 'notones') {
+      c.pron = 'ok';
+      c.fb = r.level === 'exact'
+        ? { kind: 'ok', tag: 'Пиньинь: верно', lines: [pySpan(w.py)] }
+        : { kind: 'warn', tag: 'Буквы верные', lines: ['Тоны не указаны. Добавляйте цифры: ' + pySpan(w.syl.map(s => s.base + (s.tone || 5)).join(' ')) + ' → ' + pySpan(w.py)] };
+      advanceAfterPron();
+      return;
+    }
+    const lines = [];
+    if (r.level === 'none') lines.push('Введите слоги латиницей, например: ni3 hao3 или nǐ hǎo.');
+    else if (r.level === 'miss') lines.push('Нужно: ' + pySpan(w.py) + '. У вас: ' + pySpan(r.letters) + '.' + (w.syl.some(s => s.base.includes('ü')) ? ' Букву ü можно набирать как v.' : ''));
+    else if (r.level === 'tonecount') lines.push('Число тонов не совпадает со слогами. Нужно: ' + pySpan(w.py) + '.');
+    else lines.push('Тоны: нужно ' + r.want.map(t => TONE_NAME[t]).join(', ') + ', у вас ' + r.tones.map(t => TONE_NAME[t]).join(', ') + '. Правильно: ' + pySpan(w.py));
+    c.fb = { kind: r.level === 'tone' ? 'warn' : 'bad', tag: 'Не совпало', lines };
+    render();
+    return;
+  }
+  if (c.phase === 'translate') onTranslate(checkTranslation(w, [value], S.set.showHanzi));
+}
+
+/* ---------- Отрисовка ---------- */
+const ICON = {
+  mic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/><path d="M8 21h8"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
+  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>',
+};
+// Значки окон сообщений и меню «Пуск» в духе Windows 95
+const WIN_ICON = {
+  info: '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#1084D0" stroke="#000"/><rect x="14" y="13" width="4" height="11" fill="#fff"/><circle cx="16" cy="9" r="2.2" fill="#fff"/></svg>',
+  warn: '<svg viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3 30 28H2z" fill="#FFD000" stroke="#000"/><rect x="14.5" y="11" width="3" height="9" fill="#000"/><circle cx="16" cy="24" r="1.8" fill="#000"/></svg>',
+  bad: '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#E00000" stroke="#000"/><path d="M10 10l12 12M22 10 10 22" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/></svg>',
+  ok: '<svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#00A000" stroke="#000"/><path d="M8 16.5l5.5 5.5L24 11" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+const MI = {
+  run: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="3" width="20" height="18" fill="#fff" stroke="#000"/><rect x="2" y="3" width="20" height="4" fill="#000080"/><path d="M9 10v8l7-4z" fill="#00A000"/></svg>',
+  home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8v10H3z" fill="#fff" stroke="#000"/><path d="M3 11 12 3l9 8" fill="none" stroke="#C00000" stroke-width="2"/><rect x="10" y="14" width="4" height="7" fill="#000080"/></svg>',
+  book: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h8v16H3z" fill="#fff" stroke="#000"/><path d="M13 4h8v16h-8z" fill="#fff" stroke="#000"/><path d="M11 4h2v16h-2z" fill="#800000"/><path d="M5 8h4M5 11h4M15 8h4M15 11h4" stroke="#000080"/></svg>',
+  gear: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8" fill="#808080" stroke="#000"/><circle cx="12" cy="12" r="3" fill="#fff" stroke="#000"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M5 5l3 3M16 16l3 3M5 19l3-3M16 8l3-3" stroke="#000" stroke-width="2.5"/></svg>',
+  help: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="#1084D0" stroke="#000"/><path d="M8.8 9.3a3.3 3.3 0 1 1 4.9 2.9c-1.1.6-1.7 1.3-1.7 2.6" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/><circle cx="12" cy="18" r="1.4" fill="#fff"/></svg>',
+};
+function esc(s) { return String(s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+function plural(n, one, few, many) { const a = n % 10, b = n % 100; return a === 1 && b !== 11 ? one : a >= 2 && a <= 4 && (b < 12 || b > 14) ? few : many; }
+
+function win(title, inner, opts) {
+  opts = opts || {};
+  return '<section class="win" aria-label="' + esc(title) + '"><div class="titlebar"><span class="seal" aria-hidden="true">汉</span><span class="tt">' + esc(title) + '</span>'
+    + '<span class="tb" aria-hidden="true">_</span><span class="tb" aria-hidden="true">□</span>'
+    + (opts.close ? '<button class="tb x" data-act="' + opts.close + '" aria-label="' + esc(opts.closeLabel || 'Закрыть') + '">×</button>' : '')
+    + '</div>' + (opts.menu ? '<div class="menubar">' + opts.menu + '</div>' : '') + '<div class="body">' + inner + '</div></section>';
+}
+const SCREEN_TITLE = { home: 'Китайский вслух', card: 'Раунд', summary: 'Итоги раунда', dict: 'Словарь', settings: 'Настройки', help: 'Справка' };
+function clockText() { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+setInterval(() => { const el = document.getElementById('clock'); if (el) el.textContent = clockText(); }, 15000);
+function viewTaskbar() {
+  const menu = S.startOpen
+    ? '<button class="scrim" data-act="closemenu" aria-label="Закрыть меню"></button>'
+      + '<nav class="startmenu" aria-label="Меню Пуск"><div class="band"><b>Китайский</b> 95</div><ul>'
+      + '<li><button data-act="menu-start">' + MI.run + 'Начать раунд</button></li><li><hr></li>'
+      + '<li><button data-act="menu-home">' + MI.home + 'Главная</button></li>'
+      + '<li><button data-act="dict">' + MI.book + 'Словарь</button></li>'
+      + '<li><button data-act="settings">' + MI.gear + 'Настройки</button></li>'
+      + '<li><button data-act="help">' + MI.help + 'Справка</button></li></ul></nav>'
+    : '';
+  return '<div class="taskbar"><button class="start" data-act="startmenu" aria-expanded="' + (S.startOpen ? 'true' : 'false') + '" aria-haspopup="menu"><span class="flag" aria-hidden="true"><i></i><i></i><i></i><i></i></span>Пуск</button>'
+    + '<div class="task"><span class="seal" aria-hidden="true">汉</span><span>' + SCREEN_TITLE[S.screen] + '</span></div>'
+    + '<div class="clock" id="clock">' + clockText() + '</div></div>' + menu;
+}
+function leaveCard() { clearTimers(); abortListening(); wakeOff(); S.card = null; }
+function render() {
+  const app = document.getElementById('app');
+  const html = S.screen === 'card' ? viewCard() : S.screen === 'summary' ? viewSummary() : S.screen === 'dict' ? viewDict() : S.screen === 'settings' ? viewSettings() : S.screen === 'help' ? viewHelp() : viewHome();
+  app.innerHTML = '<main class="wrap">' + html + '</main>' + viewTaskbar();
+  const inp = document.getElementById('typed');
+  if (inp && !('ontouchstart' in window)) inp.focus();
+}
+
+function viewHome() {
+  const total = WORDS.length;
+  const learned = WORDS.filter(w => P(w.id) && P(w.id).box >= 3).length;
+  const inWork = WORDS.filter(w => P(w.id) && P(w.id).box < 3).length;
+  const fresh = total - learned - inWork;
+  const chips = THEMES.map(t => {
+    const ws = WORDS.filter(w => w.t === t.id);
+    const l = ws.filter(w => P(w.id) && P(w.id).box >= 3).length;
+    return '<button class="chip" data-act="theme" data-id="' + t.id + '" aria-pressed="' + S.set.themes.includes(t.id) + '"><i class="cb" aria-hidden="true"></i>' + esc(t.name) + ' <em>' + l + '/' + ws.length + '</em></button>';
+  }).join('');
+  const v = pickVoice();
+  const ttsOk = !!window.speechSynthesis;
+  const checks = [];
+  checks.push(!ttsOk
+    ? ['bad', 'Озвучка недоступна в этом браузере. Откройте страницу в Safari или Chrome.']
+    : v ? ['ok', 'Китайский голос: ' + esc(v.name)]
+      : ['warn', 'Китайский голос пока не найден. Обычно он подгружается через пару секунд; если нет — установите голос «Китайский (материковый)» в настройках системы.']);
+  if (!SR) checks.push(['warn', 'Распознавание речи в этом браузере недоступно, ответы вводятся с клавиатуры. Для голоса нужны Chrome (компьютер, Android) или Safari (iPhone, iPad, Mac).']);
+  else if (S.micBlocked) checks.push(['bad', 'Микрофон заблокирован для этой страницы, включён ввод с клавиатуры.']);
+  else if (S.set.input === 'text') checks.push(['warn', 'Включён ввод с клавиатуры. Голос можно вернуть в настройках.']);
+  else checks.push(['ok', 'Распознавание речи доступно. При первом ответе браузер спросит разрешение на микрофон.']);
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (isIOS && (!ttsOk || !SR)) checks.push(['warn', 'Если на iPhone включён Режим блокировки, Safari отключает озвучку и распознавание речи. Выключите его только для этого сайта: меню страницы в адресной строке → «Настройки веб-сайта» → «Режим блокировки» → выкл., затем обновите страницу.']);
+  if (S.micTest) checks.push([S.micTest.ok ? 'ok' : 'bad', esc(S.micTest.text)]);
+  const frameNote = S.inFrame && SR
+    ? '<p class="note">Страница открыта во встроенном окне. Здесь браузер может не дать микрофон — тогда ответы вводятся с клавиатуры.' + (FULL_URL ? ' <a href="' + esc(FULL_URL) + '" target="_blank" rel="noopener">Открыть полную версию с голосом</a>' : '') + '</p>'
+    : '';
+  const N = new Set(buildRound().queue.map(q => q.id)).size;
+  const due = dueCount(), sk = streak();
+  const tones = Object.entries(ST.tones).filter(x => x[1] >= 2).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const pairs = Object.entries(ST.pairs).filter(x => x[1] >= 2).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const hard = hardWords();
+  const weak = tones.map(x => ['warn', TONE_NAME[x[0]] + ' тон — ' + x[1] + ' ' + plural(x[1], 'ошибка', 'ошибки', 'ошибок') + '. ' + (TONE_HINT[x[0]] || '')])
+    .concat(pairs.map(x => ['warn', 'Звуки ' + esc(x[0]) + ' — ' + x[1] + ' ' + plural(x[1], 'ошибка', 'ошибки', 'ошибок') + (INIT_HINTS[x[0]] ? '. ' + INIT_HINTS[x[0]] : '')]));
+  const weakPanel = weak.length || hard.length
+    ? '<section class="panel"><h2>Слабые места</h2>'
+      + (weak.length ? '<ul class="checks">' + weak.map(c => '<li><span class="dot ' + c[0] + '"></span><span>' + c[1] + '</span></li>').join('') + '</ul>' : '')
+      + (hard.length ? '<div class="list">' + hard.map(w => '<button class="li" data-act="say" data-id="' + esc(w.id) + '"><span class="h" lang="zh-CN">' + esc(w.h) + '</span><span><span class="p">' + pinyinHtml(w.s) + '</span><br><span class="r">' + esc(w.r[0]) + '</span></span><span class="res bad">' + (P(w.id).wrong + (P(w.id).te || 0) + (P(w.id).se || 0)) + ' ош.</span></button>').join('') + '</div>'
+        + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="hard">Повторить трудные · ' + hard.length + '</button></div>' : '')
+      + '</section>'
+    : '';
+  const menu = '<button data-act="dict"><u>С</u>ловарь</button><button data-act="settings"><u>Н</u>астройки</button><button data-act="help">Спр<u>а</u>вка</button>';
+  const inner = '<p class="muted small" style="margin:0">' + total + ' базовых слов: слушать, повторять, переводить, говорить.</p>'
+    + '<section class="stats" aria-label="Прогресс"><div class="stat"><b>' + learned + '</b><span>выучено</span></div><div class="stat"><b>' + inWork + '</b><span>в работе</span></div><div class="stat"><b>' + fresh + '</b><span>новых</span></div></section>'
+    + '<section class="stats two" aria-label="Сегодня"><div class="stat"><b>' + due + '</b><span>к повторению сегодня</span></div><div class="stat"><b>' + sk + '</b><span>' + plural(sk, 'день', 'дня', 'дней') + ' подряд</span></div></section>'
+    + '<section class="panel"><h2>Темы</h2><div class="chips">' + chips + '</div>'
+    + '<button class="btn primary big" data-act="start">' + ICON.play + ' Начать раунд · ' + N + ' ' + plural(N, 'слово', 'слова', 'слов') + '</button></section>'
+    + weakPanel
+    + frameNote
+    + '<section class="panel"><h2>Проверка устройства</h2><ul class="checks">' + checks.map(c => '<li><span class="dot ' + c[0] + '"></span><span>' + c[1] + '</span></li>').join('') + '</ul>'
+    + (useVoice() ? '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="mictest">' + ICON.mic + ' Проверить микрофон</button><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div>' : (ttsOk ? '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div>' : ''))
+    + '<p class="muted small" style="margin:0">Как проходит раунд и что умеет проверка — в разделе «Справка».</p></section>';
+  return win('Китайский вслух', inner, { menu });
+}
+function viewHelp() {
+  const inner = '<section class="panel"><h2>Как проходит раунд</h2><ol class="howto">'
+    + '<li>Программа произносит слово по-китайски.</li>'
+    + '<li>Вы повторяете. Она сверяет слоги и тоны и показывает, что прозвучало не так.</li>'
+    + '<li>Вы говорите перевод по-русски. Она проверяет его.</li>'
+    + '<li>Выученные слова (уровень 3+) идут наоборот: она называет перевод, вы говорите по-китайски.</li></ol>'
+    + '<p class="muted small" style="margin:0">У нового слова перевод виден сразу, а спрашивается оно через пару карточек. На повторении перевод скрыт до ответа; если забыли, нажмите «Не помню — показать перевод». Постоянный показ перевода включается в настройках. Ошибки возвращаются в конце раунда, выученные слова — через 1, 3, 7 и 21 день. Направление можно изменить в настройках.</p></section>'
+    + '<section class="panel"><h2>Проверка произношения</h2><p class="small" style="margin:0">Проверку делает распознавание речи браузера: оно определяет, какое слово вы сказали, но тон оценивает не так тонко, как преподаватель. Если уверены, что сказали верно, нажмите «Засчитать». Практический смысл проверки: понял бы вас китаец.</p></section>'
+    + '<section class="panel"><h2>Где работает голос</h2><ul class="checks">'
+    + '<li><span class="dot ok"></span><span>Компьютер и Android — Chrome. iPhone, iPad, Mac — Safari. Нужен интернет.</span></li>'
+    + '<li><span class="dot warn"></span><span>Режим блокировки на iPhone отключает озвучку и микрофон. Исключение для сайта: значок слева от адреса → «Настройки сайта» → «Режим блокировки» выкл.</span></li>'
+    + '<li><span class="dot warn"></span><span>Прогресс хранится в этом браузере. Раз в неделю копируйте его в Заметки: Настройки → «Резервная копия».</span></li></ul></section>'
+    + '<section class="panel"><h2>О программе</h2><p class="small" style="margin:0">Китайский вслух — ' + WORDS.length + ' базовых слов, ' + THEMES.length + ' тем. Повторение по интервалам, статистика слабых мест, обратный режим.</p></section>'
+    + '<div class="row"><button class="btn primary" data-act="home" style="min-width:120px">OK</button></div>';
+  return win('Справка', inner, { close: 'home' });
+}
+
+function viewCard() {
+  const R = S.round, c = S.card, item = curItem(), w = curWord();
+  const pct = Math.round(R.idx / R.queue.length * 100);
+  const isIntro = item.mode === 'intro';
+  const isRu = c.dir === 'ru';
+  const saying = c.phase === 'say';
+  const showHz = (S.set.showHanzi && !saying) || c.reveal;
+  const showPy = (S.set.showPinyin && !saying) || c.reveal;
+  const always = S.set.meaning === 'always';
+  // Перевод виден: у новых слов, в обратном режиме (это задание), после ответа, по подсказке или если так выбрано в настройках
+  const showMean = isIntro || saying || c.reveal || c.peek || always;
+  const canPeek = !showMean && !isRu && (c.phase === 'repeat' || c.phase === 'translate');
+  const steps = isRu ? ['Вспомнить', 'Сказать', 'Ответ'] : (isIntro || always) ? ['Слушать', 'Повторить', 'Запомнить'] : ['Слушать', 'Повторить', 'Перевести'];
+  const stepIdx = isRu ? (saying ? (c.attempts > 0 || S.listening ? 1 : 0) : 2) : c.phase === 'repeat' ? (S.speaking ? 0 : 1) : 2;
+  const stepsHtml = steps.map((s, k) => '<li class="' + (k < stepIdx || c.phase === 'result' ? 'done' : k === stepIdx ? 'on' : '') + '">' + s + '</li>').join('');
+  let area = '';
+  const fb = c.fb ? '<div class="fb ' + c.fb.kind + '" role="status"><span class="ico">' + WIN_ICON[c.fb.kind] + '</span><div class="txt"><b class="tag">' + esc(c.fb.tag) + '</b>' + c.fb.lines.map(l => '<div>' + l + '</div>').join('') + '</div></div>' : '';
+  const voice = useVoice();
+  const micBtn = (label) => voice
+    ? '<button class="mic' + (S.listening ? ' live' : '') + '" data-act="mic" aria-label="' + (S.listening ? 'Остановить запись' : label) + '">' + (S.listening ? ICON.stop : ICON.mic) + '</button>'
+      + '<div class="live" id="live" aria-live="polite">' + (S.listening ? (c.live ? 'Слышу: ' + esc(c.live) : 'Говорите…') : (S.speaking ? 'Слушайте…' : 'Нажмите на микрофон')) + '</div>'
+    : '';
+  const typed = (ph) => voice ? '' : '<form class="typed" data-form="typed"><input id="typed" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="' + esc(ph) + '" aria-label="' + esc(ph) + '"><button class="btn primary" type="submit">Проверить</button></form>';
+
+  if (c.phase === 'repeat') {
+    const passed = c.pron;
+    area = '<div class="prompt">' + (voice ? 'Повторите за мной' : 'Запишите пиньинем, что услышали') + '</div>'
+      + (passed ? '' : micBtn('Повторить слово') + typed('Пиньинь: ni3 hao3 или nǐ hǎo'))
+      + fb;
+    if (!passed && c.fb && c.fb.kind !== 'ok' && c.attempts > 0) {
+      area += '<div class="row"><button class="btn" data-act="retry">' + ICON.play + ' Послушать и повторить</button><button class="btn" data-act="acceptpron">Засчитать</button>'
+        + (c.attempts >= 3 ? '<button class="btn primary" data-act="skippron">Дальше</button>' : '') + '</div>';
+    }
+    if (canPeek) area += '<div class="row"><button class="btn quiet" data-act="peek">Не помню перевод — показать</button></div>';
+  } else if (saying) {
+    area = '<div class="prompt">' + (voice ? 'Скажите это по-китайски' : 'Напишите это пиньинем') + '</div>'
+      + micBtn('Сказать по-китайски') + typed('Пиньинь: ni3 hao3 или nǐ hǎo')
+      + fb
+      + '<div class="row">' + (c.attempts > 0 ? '<button class="btn" data-act="acceptpron">Засчитать</button>' : '')
+      + '<button class="btn quiet" data-act="reveal">' + (c.attempts > 0 ? 'Показать ответ' : 'Не знаю') + '</button></div>';
+  } else if (c.phase === 'reveal') {
+    area = fb
+      + '<p class="muted small" style="margin:0">Запомните перевод — спрошу через пару карточек.</p>'
+      + '<div class="row"><button class="btn primary big" data-act="introdone">Запомнил, дальше</button></div>';
+  } else if (c.phase === 'translate') {
+    area = fb + '<div class="prompt">Как это по-русски?</div>' + micBtn('Сказать перевод') + typed('Перевод по-русски')
+      + '<div class="row"><button class="btn" data-act="peek">Не помню — показать перевод</button></div>';
+  } else if (c.phase === 'result') {
+    area = fb
+      + '<div class="row">' + (c.trFail ? '<button class="btn" data-act="override">Я сказал верно</button>' : '')
+      + '<button class="btn primary" data-act="next">Дальше</button></div>';
+  }
+
+  return win('Карточка ' + (R.idx + 1) + ' из ' + R.queue.length, '<div class="cardtop">'
+    + '<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>'
+    + '<span class="count">' + pct + '%</span></div>'
+    + '<section class="card">'
+    + '<div class="meta"><span class="badge' + (isIntro ? ' new' : '') + '">' + (isIntro ? 'Новое слово' : item.mode === 'recall' ? 'Вспомните' : isRu ? 'По-китайски' : 'Повторение') + '</span><span>' + esc(THEME_NAME[w.t]) + '</span></div>'
+    + '<button class="word" data-act="play" aria-label="Прослушать слово">'
+    + (showHz ? '<span class="hz" lang="zh-CN">' + esc(w.h) + '</span>' : '<span class="hz hidden">· · ·</span>')
+    + (showPy ? '<span class="py">' + pinyinHtml(w.s) + '</span>' : '')
+    + (showMean
+      ? '<span class="mean">' + esc(w.r[0]) + (w.n && !saying ? '<small>' + esc(w.n) + '</small>' : '') + '</span>'
+      : '<span class="mean hid">перевод — после вашего ответа</span>')
+    + '</button>'
+    + (saying
+      ? (ruVoice() ? '<div class="row"><button class="btn" data-act="play">' + ICON.play + ' Повторить задание</button></div>' : '')
+      : '<div class="row"><button class="btn" data-act="play">' + ICON.play + ' Ещё раз</button><button class="btn" data-act="slow">Медленно</button></div>')
+    + '<ol class="steps">' + stepsHtml + '</ol>'
+    + area
+    + '</section>', { close: 'quit', closeLabel: 'Закончить раунд' });
+}
+
+function viewSummary() {
+  const R = S.round;
+  const ids = R.order;
+  const ok = ids.filter(id => R.first[id]).length;
+  const rows = ids.map(id => {
+    const w = BY_ID[id];
+    return '<button class="li" data-act="say" data-id="' + esc(id) + '"><span class="h" lang="zh-CN">' + esc(w.h) + '</span><span><span class="p">' + pinyinHtml(w.s) + '</span><br><span class="r">' + esc(w.r[0]) + '</span></span>'
+      + (R.first[id] ? '<span class="res ok">верно</span>' : R.final[id] ? '<span class="res ok">со 2-й попытки</span>' : '<span class="res bad">повторить</span>') + '</button>';
+  }).join('');
+  return win('Раунд завершён', '<section class="panel" style="text-align:center"><h2>Результат</h2><div class="score">' + ok + ' из ' + ids.length + '</div><div class="muted small">' + plural(ok, 'слово', 'слова', 'слов') + ' с первого раза · прогресс сохранён</div></section>'
+    + '<section class="list" aria-label="Слова раунда">' + rows + '</section>'
+    + '<div class="row"><button class="btn primary big" data-act="start">' + ICON.play + ' Ещё раунд</button><button class="btn" data-act="home">На главную</button></div>', { close: 'home' });
+}
+
+function viewDict() {
+  const groups = THEMES.map(t => {
+    const rows = WORDS.filter(w => w.t === t.id).map(w => {
+      const b = P(w.id) ? P(w.id).box : 0;
+      return '<button class="li" data-act="say" data-id="' + esc(w.id) + '"><span class="h" lang="zh-CN">' + esc(w.h) + '</span><span><span class="p">' + pinyinHtml(w.s) + '</span><br><span class="r">' + esc(w.r.filter(x => !/^\d+$/.test(x)).slice(0, 3).join(', ')) + '</span></span>'
+        + '<span class="boxes" aria-label="Уровень ' + b + ' из 5">' + [1, 2, 3, 4, 5].map(k => '<i class="' + (k <= b ? 'on' : '') + '"></i>').join('') + '</span></button>';
+    }).join('');
+    return '<section class="group"><h2>' + esc(t.name) + '</h2><div class="list">' + rows + '</div></section>';
+  }).join('');
+  return win('Словарь', '<p class="muted small" style="margin:0">Нажмите на слово, чтобы послушать. Квадраты справа — уровень от 0 до 5.</p>' + groups, { close: 'home' });
+}
+
+function viewSettings() {
+  const s = S.set;
+  const seg = (key, vals, fmt) => '<div class="seg">' + vals.map(v => '<button data-act="set" data-key="' + key + '" data-val="' + v + '" aria-pressed="' + (String(s[key]) === String(v)) + '">' + (fmt ? fmt(v) : v) + '</button>').join('') + '</div>';
+  const tog = (key, label) => '<label class="tog"><span>' + label + '</span><input type="checkbox" data-tog="' + key + '"' + (s[key] ? ' checked' : '') + '></label>';
+  const vs = zhVoices();
+  const voiceSel = vs.length
+    ? '<div class="field"><label for="voice">Голос</label><select id="voice" data-sel="voiceURI"><option value="">Автовыбор</option>' + vs.map(v => '<option value="' + esc(v.voiceURI) + '"' + (v.voiceURI === s.voiceURI ? ' selected' : '') + '>' + esc(v.name) + '</option>').join('') + '</select></div>'
+    : '<p class="muted small" style="margin:0">Китайские голоса в системе не найдены.</p>';
+  return win('Настройки', ''
+    + '<section class="panel"><h2>Раунд</h2><span class="lab">Слов за раунд</span>' + seg('roundSize', [6, 10, 15, 20])
+    + '<span class="lab">Из них новых</span>' + seg('newPerRound', [2, 4, 6, 8]) + '</section>'
+    + '<section class="panel"><h2>Направление</h2>' + seg('direction', ['mix', 'zh', 'ru'], v => v === 'mix' ? 'Смешанно' : v === 'zh' ? 'Слушать → переводить' : 'Говорить по-китайски')
+    + '<p class="muted small" style="margin:0">«Смешанно»: новые слова и слова в работе — слушать и переводить; выученные (уровень 3+) — программа называет перевод, а вы говорите по-китайски.</p></section>'
+    + '<section class="panel"><h2>Ответы</h2>' + seg('input', ['voice', 'text'], v => v === 'voice' ? 'Голосом' : 'С клавиатуры')
+    + tog('autoMic', 'Микрофон включается сам после слова') + tog('autoNext', 'Переходить дальше после верного ответа') + tog('beep', 'Короткий сигнал, когда микрофон включился') + '</section>'
+    + '<section class="panel"><h2>Перевод на карточке</h2>' + seg('meaning', ['after', 'always'], v => v === 'after' ? 'После ответа' : 'Сразу')
+    + '<p class="muted small" style="margin:0">«После ответа»: на повторении перевод скрыт, пока вы не назовёте его сами, — так слова запоминаются прочнее. «Сразу»: перевод виден всегда, а вопрос о переводе пропускается. У новых слов перевод виден сразу в обоих режимах.</p></section>'
+    + '<section class="panel"><h2>Показ</h2>' + tog('showHanzi', 'Показывать иероглифы') + tog('showPinyin', 'Показывать пиньинь')
+    + '<p class="muted small" style="margin:0">Без иероглифов и пиньиня — тренировка только на слух.</p></section>'
+    + '<section class="panel"><h2>Голос</h2><div class="field"><label for="rate">Скорость речи: <span id="rateval">' + s.rate.toFixed(2) + '</span></label><input id="rate" type="range" min="0.5" max="1.1" step="0.05" value="' + s.rate + '" data-range="rate"></div>'
+    + voiceSel + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div></section>'
+    + '<section class="panel"><h2>Резервная копия</h2><p class="muted small" style="margin:0">Прогресс хранится в этом браузере. Safari может стереть данные сайта, если неделю им не пользоваться. Скопируйте прогресс в Заметки; чтобы вернуть его или перенести на другое устройство, вставьте текст в поле и нажмите «Восстановить».</p>'
+    + '<textarea id="backup" class="ta" rows="3" placeholder="Сюда вставьте сохранённый текст">' + esc(S.backupText) + '</textarea>'
+    + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="backup">Скопировать прогресс</button><button class="btn" data-act="restore">Восстановить</button></div>'
+    + (S.note ? '<p class="note">' + esc(S.note) + '</p>' : '') + '</section>'
+    + '<section class="panel"><h2>Сброс</h2>'
+    + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="reset">' + (S.resetArm ? 'Нажмите ещё раз, чтобы стереть' : 'Сбросить прогресс') + '</button></div></section>'
+    + '<div class="row"><button class="btn primary" data-act="home" style="min-width:120px">OK</button></div>', { close: 'home' });
+}
+
+/* ---------- События ---------- */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  const act0 = b.dataset.act;
+  const act = act0 === 'menu-home' ? 'home' : act0 === 'menu-start' ? 'start' : act0;
+  const c = S.card;
+  if (act !== 'reset') S.resetArm = false;
+  if (act !== 'backup' && act !== 'restore') S.note = '';
+  if (act !== 'startmenu') S.startOpen = false;
+  if (S.set.beep) ensureAudio();
+  switch (act) {
+    case 'startmenu': S.startOpen = !S.startOpen; render(); break;
+    case 'closemenu': render(); break;
+    case 'start': leaveCard(); startRound(); if (S.screen !== 'card') render(); break;
+    case 'hard': leaveCard(); startRound(hardWords().map(w => w.id)); if (S.screen !== 'card') render(); break;
+    case 'home': leaveCard(); S.screen = 'home'; render(); break;
+    case 'quit':
+      leaveCard();
+      S.screen = S.round && S.round.order.length ? 'summary' : 'home'; render(); break;
+    case 'settings': leaveCard(); S.screen = 'settings'; render(); break;
+    case 'dict': leaveCard(); S.screen = 'dict'; render(); break;
+    case 'help': leaveCard(); S.screen = 'help'; render(); break;
+    case 'theme': {
+      const id = b.dataset.id, t = S.set.themes;
+      S.set.themes = t.includes(id) ? (t.length > 1 ? t.filter(x => x !== id) : t) : [...t, id];
+      save(KEY_SET, S.set); render(); break;
+    }
+    case 'play': if (c) playThenListen(false); break;
+    case 'slow': if (c) playThenListen(true); break;
+    case 'say': speak(BY_ID[b.dataset.id].h); break;
+    case 'mic':
+      if (S.listening) { if (rec) try { rec.stop(); } catch (er) { /* уже остановлено */ } }
+      else startListening(true);
+      break;
+    case 'retry': if (c) { c.fb = null; playThenListen(true); } break;
+    case 'acceptpron': acceptPron(); break;
+    case 'skippron': skipPron(); break;
+    case 'introdone': finishIntro(); break;
+    case 'dontknow': abortListening(); onTranslate({ level: 'dontknow' }); break;
+    case 'peek': peek(); break;
+    case 'reveal': if (c && c.phase === 'say') { clearTimers(); abortListening(); revealSay(); } break;
+    case 'backup': {
+      const data = JSON.stringify({ v: 1, at: new Date().toISOString(), prog: S.prog, stats: ST, set: S.set });
+      S.backupText = data;
+      const done = () => { S.note = 'Скопировано в буфер обмена. Вставьте текст в Заметки.'; render(); };
+      const manual = () => { S.note = 'Буфер обмена недоступен: выделите текст в поле и скопируйте вручную.'; render(); };
+      try { navigator.clipboard.writeText(data).then(done, manual); } catch (er) { manual(); }
+      break;
+    }
+    case 'restore': {
+      try {
+        const d = JSON.parse(S.backupText);
+        if (!d || typeof d.prog !== 'object' || Array.isArray(d.prog)) throw new Error('bad');
+        S.prog = d.prog;
+        if (d.stats && typeof d.stats === 'object') { ST = d.stats; ST.days = ST.days || {}; ST.tones = ST.tones || {}; ST.pairs = ST.pairs || {}; }
+        if (d.set && typeof d.set === 'object') { S.set = Object.assign(DEFAULTS(), d.set); S.set.themes = (S.set.themes || []).filter(id => THEME_NAME[id]); if (!S.set.themes.length) S.set.themes = THEMES.map(t => t.id); }
+        save(KEY_PROG, S.prog); save(KEY_STATS, ST); save(KEY_SET, S.set);
+        S.note = 'Восстановлено: ' + Object.keys(S.prog).length + ' ' + plural(Object.keys(S.prog).length, 'слово', 'слова', 'слов') + ' с прогрессом.';
+      } catch (er) { S.note = 'Не удалось прочитать: вставьте в поле весь текст резервной копии.'; }
+      render();
+      break;
+    }
+    case 'override': overrideTranslation(); break;
+    case 'next': next(); break;
+    case 'set': {
+      const k = b.dataset.key, v = b.dataset.val;
+      S.set[k] = /^\d+$/.test(v) ? +v : v;
+      if (k === 'input' && v === 'voice') S.micBlocked = false;
+      save(KEY_SET, S.set); render(); break;
+    }
+    case 'ttstest': speak('你好，我们开始学习中文吧'); break;
+    case 'mictest':
+      S.micTest = { ok: true, text: 'Скажите по-русски «привет»…' }; render();
+      listen('ru-RU').then(r => {
+        if (r.alts.length) S.micTest = { ok: true, text: 'Микрофон работает. Распознано: «' + r.alts[0] + '»' };
+        else {
+          if (r.error === 'not-allowed' || r.error === 'service-not-allowed') S.micBlocked = true;
+          S.micTest = { ok: false, text: (r.error === 'not-allowed' || r.error === 'service-not-allowed') ? 'Доступ к микрофону запрещён. Разрешите его для этой страницы в настройках браузера.' : (ERR_TEXT[r.error] || 'Ничего не распознано, попробуйте ещё раз.') };
+        }
+        if (S.screen === 'home') render();
+      });
+      break;
+    case 'reset':
+      if (S.resetArm) { S.prog = {}; ST = { days: {}, tones: {}, pairs: {} }; save(KEY_PROG, S.prog); save(KEY_STATS, ST); S.resetArm = false; }
+      else S.resetArm = true;
+      render(); break;
+  }
+});
+document.addEventListener('change', e => {
+  const t = e.target;
+  if (t.dataset.tog) { S.set[t.dataset.tog] = t.checked; save(KEY_SET, S.set); }
+  if (t.dataset.sel) { S.set[t.dataset.sel] = t.value; save(KEY_SET, S.set); }
+  if (t.dataset.range) { S.set[t.dataset.range] = +t.value; save(KEY_SET, S.set); }
+});
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.range === 'rate') { const el = document.getElementById('rateval'); if (el) el.textContent = (+t.value).toFixed(2); }
+  if (t.id === 'backup') S.backupText = t.value;
+});
+document.addEventListener('submit', e => {
+  const f = e.target.closest('[data-form="typed"]');
+  if (!f) return;
+  e.preventDefault();
+  const v = f.querySelector('input').value;
+  if (v.trim()) submitTyped(v);
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && S.startOpen) { S.startOpen = false; render(); return; }
+  if (S.screen !== 'card' || !S.card) return;
+  if (e.target.closest('input, select, textarea')) return;
+  if (e.key === ' ' || e.key === 'Enter') {
+    const c = S.card;
+    e.preventDefault();
+    if (c.phase === 'reveal') finishIntro();
+    else if (c.phase === 'result') next();
+    else if (useVoice()) { if (S.listening) { if (rec) try { rec.stop(); } catch (er) { /* уже остановлено */ } } else startListening(true); }
+  } else if (e.key === 'r' || e.key === 'к') playThenListen(false);
+});
+
+// Доступ для автотестов
+window.__kv = { WORDS, checkPron, checkTyped, checkTranslation, pinyinPlain, numZh, cleanZh, describeSyl, hardWords, streak, S, get ST() { return ST; } };
+
+render();
+if (window.speechSynthesis) setTimeout(() => { if (S.screen === 'home') render(); }, 700);
+})();
+</script>
+<!-- ARTIFACT:END -->
+</body>
+</html>

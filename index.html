@@ -633,6 +633,8 @@ const S = {
   listening: null,
   speaking: false,
   micBlocked: false,
+  micOk: false,
+  micLog: null,
   micTest: null,
   resetArm: false,
   note: '',
@@ -733,18 +735,25 @@ let rec = null;
 function listen(lang, onInterim) {
   return new Promise(resolve => {
     let R;
-    try { R = new SR(); } catch (e) { resolve({ alts: [], error: 'start-failed' }); return; }
+    const trace = [];
+    try { R = new SR(); } catch (e) { resolve({ alts: [], error: 'start-failed', trace: ['не создан: ' + e.message] }); return; }
     rec = R;
     R.lang = lang; R.interimResults = true; R.maxAlternatives = 5; R.continuous = false;
     let finals = null, interim = '', error = null, done = false, quiet = null, guard = null;
+    R.onstart = () => trace.push('старт');
+    R.onaudiostart = () => { trace.push('звук'); S.micOk = true; };
+    R.onspeechstart = () => trace.push('речь');
     const stop = () => { try { R.stop(); } catch (e) { /* уже остановлено */ } guard = guard || setTimeout(finish, 1500); };
     const hard = setTimeout(stop, 9000);
     function finish() {
       if (done) return;
       done = true; clearTimeout(hard); clearTimeout(quiet); clearTimeout(guard);
       if (rec === R) rec = null;
-      if (R.kvAborted) { resolve({ alts: [], error: 'aborted' }); return; }
-      resolve({ alts: finals || (interim ? [interim] : []), error: finals || interim ? null : error });
+      trace.push('конец');
+      S.micLog = { at: new Date(), lang, trace: trace.slice(), heard: finals ? finals[0] : interim };
+      if (R.kvAborted) { resolve({ alts: [], error: 'kv-aborted', trace }); return; }
+      if (finals || interim) S.micOk = true;
+      resolve({ alts: finals || (interim ? [interim] : []), error: finals || interim ? null : error, trace });
     }
     R.onresult = e => {
       let txt = '';
@@ -756,13 +765,14 @@ function listen(lang, onInterim) {
         finals = e.results.length > 1 ? [txt, ...alts] : alts;
         stop();
       } else interim = txt;
+      if (!trace.includes('текст')) trace.push('текст');
       if (onInterim) onInterim(txt);
       clearTimeout(quiet);
       quiet = setTimeout(stop, 1600);
     };
-    R.onerror = e => { error = e.error || 'error'; };
+    R.onerror = e => { error = e.error || 'error'; trace.push('ошибка ' + error); if (error === 'no-speech') S.micOk = true; };
     R.onend = finish;
-    try { R.start(); } catch (e) { error = 'start-failed'; finish(); }
+    try { R.start(); } catch (e) { error = 'start-failed'; trace.push('start(): ' + (e && e.message || e)); finish(); }
   });
 }
 function abortListening() {
@@ -778,7 +788,7 @@ const ERR_TEXT = {
   'network': 'Распознавание речи работает через интернет. Проверьте соединение.',
   'language-not-supported': 'Браузер не распознаёт этот язык. На iPhone и Mac включите Диктовку в настройках.',
   'start-failed': 'Не удалось включить микрофон.',
-  'aborted': 'Запись остановлена.',
+  'aborted': 'Safari прервал запись. Нажмите на микрофон и скажите слово ещё раз.',
 };
 
 /* ---------- Раунд ---------- */
@@ -892,7 +902,7 @@ function playThenListen(slow) {
   p.then(() => {
     if (S.card !== c || S.screen !== 'card') return;
     render();
-    if (S.set.autoMic && useVoice() && (c.phase === 'repeat' || c.phase === 'translate' || c.phase === 'say')) later(() => { if (S.card === c && !S.listening) startListening(false); }, 350);
+    if (S.set.autoMic && S.micOk && useVoice() && (c.phase === 'repeat' || c.phase === 'translate' || c.phase === 'say')) later(() => { if (S.card === c && !S.listening) startListening(false); }, 350);
   });
   render();
 }
@@ -919,13 +929,19 @@ function startListening(byUser) {
         } else {
           c.fb = { kind: 'info', tag: 'Нажмите на микрофон', lines: ['Браузер не включил микрофон сам — нажмите на кнопку.'] };
         }
-      } else if (res.error !== 'aborted') {
+      } else if (res.error !== 'kv-aborted') {
         c.fb = { kind: 'warn', tag: 'Не получилось', lines: [ERR_TEXT[res.error] || ('Ошибка распознавания: ' + res.error)] };
       }
+      if (c.fb && res.error !== 'kv-aborted') c.fb.lines.push('<span class="muted small">Микрофон: ' + esc((res.trace || []).join(' → ') || 'нет событий') + ' (код: ' + esc(res.error) + ')</span>');
       render();
       return;
     }
     if (c.phase !== phase) { render(); return; }
+    if (!res.alts.length) {
+      c.fb = { kind: 'warn', tag: 'Ничего не распознано', lines: ['Скажите слово громче и сразу после нажатия на микрофон.', '<span class="muted small">Микрофон: ' + esc((res.trace || []).join(' → ') || 'нет событий') + '</span>'] };
+      render();
+      return;
+    }
     if (phase === 'repeat') onPron(checkPron(curWord(), res.alts));
     else if (phase === 'say') onSay(checkPron(curWord(), res.alts));
     else if (phase === 'translate') onTranslate(checkTranslation(curWord(), res.alts, S.set.showHanzi));
@@ -1022,7 +1038,7 @@ function advanceAfterPron() {
 }
 // Программа вслух просит перевод по-русски, затем включает микрофон — чтобы не путать с повтором китайского слова
 function askTranslation(c) {
-  const go = () => { if (S.card === c && c.phase === 'translate' && S.set.autoMic && useVoice() && !S.listening) later(() => { if (S.card === c && !S.listening) startListening(false); }, 250); };
+  const go = () => { if (S.card === c && c.phase === 'translate' && S.set.autoMic && S.micOk && useVoice() && !S.listening) later(() => { if (S.card === c && !S.listening) startListening(false); }, 250); };
   if (ruVoice()) speak('А как это по-русски?', 1.05, 'ru-RU').then(go);
   else go();
 }
@@ -1281,6 +1297,7 @@ function viewHome() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (isIOS && (!ttsOk || !SR)) checks.push(['warn', 'Если на iPhone включён Режим блокировки, Safari отключает озвучку и распознавание речи. Выключите его только для этого сайта: меню страницы в адресной строке → «Настройки веб-сайта» → «Режим блокировки» → выкл., затем обновите страницу.']);
   if (S.micTest) checks.push([S.micTest.ok ? 'ok' : 'bad', esc(S.micTest.text)]);
+  if (S.micLog) checks.push([S.micLog.heard ? 'ok' : 'warn', 'Последняя запись (' + (S.micLog.lang === 'ru-RU' ? 'рус.' : 'кит.') + '): ' + esc(S.micLog.trace.join(' → ')) + (S.micLog.heard ? ' — «' + esc(S.micLog.heard) + '»' : '')]);
   const frameNote = S.inFrame && SR
     ? '<p class="note">Страница открыта во встроенном окне. Здесь браузер может не дать микрофон — тогда ответы вводятся с клавиатуры.' + (FULL_URL ? ' <a href="' + esc(FULL_URL) + '" target="_blank" rel="noopener">Открыть полную версию с голосом</a>' : '') + '</p>'
     : '';
@@ -1350,7 +1367,7 @@ function viewCard() {
   const langWord = ruStep ? 'по-русски' : 'по-китайски';
   const micBtn = (label) => voice
     ? '<button class="mic ' + (ruStep ? 'ru' : 'zh') + (S.listening ? ' live' : '') + '" data-act="mic" aria-label="' + (S.listening ? 'Остановить запись' : label) + '">' + (S.listening ? ICON.stop : ICON.mic) + '<span class="ml">' + (ruStep ? 'РУС' : '中文') + '</span></button>'
-      + '<div class="live" id="live" aria-live="polite">' + (S.listening ? (c.live ? 'Слышу: ' + esc(c.live) : 'Говорите ' + langWord + '…') : (S.speaking ? 'Слушайте…' : 'Нажмите на микрофон и говорите ' + langWord)) + '</div>'
+      + '<div class="live" id="live" aria-live="polite">' + (S.listening ? (c.live ? 'Слышу: ' + esc(c.live) : 'Говорите ' + langWord + '…') : (S.speaking ? 'Слушайте…' : (S.micOk ? 'Нажмите на микрофон и говорите ' + langWord : 'Нажмите на микрофон: первый раз после открытия включайте его сами'))) + '</div>'
     : '';
   const typed = (ph) => voice ? '' : '<form class="typed" data-form="typed"><input id="typed" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="' + esc(ph) + '" aria-label="' + esc(ph) + '"><button class="btn primary" type="submit">Проверить</button></form>';
 
@@ -1539,7 +1556,7 @@ document.addEventListener('click', e => {
         if (r.alts.length) S.micTest = { ok: true, text: 'Микрофон работает. Распознано: «' + r.alts[0] + '»' };
         else {
           if (r.error === 'not-allowed' || r.error === 'service-not-allowed') S.micBlocked = true;
-          S.micTest = { ok: false, text: (r.error === 'not-allowed' || r.error === 'service-not-allowed') ? 'Доступ к микрофону запрещён. Разрешите его для этой страницы в настройках браузера.' : (ERR_TEXT[r.error] || 'Ничего не распознано, попробуйте ещё раз.') };
+          S.micTest = { ok: false, text: ((r.error === 'not-allowed' || r.error === 'service-not-allowed') ? 'Доступ к микрофону запрещён. Разрешите его для этой страницы в настройках браузера.' : (ERR_TEXT[r.error] || 'Ничего не распознано, попробуйте ещё раз.')) + ' Код: ' + (r.error || 'нет') + '. Журнал: ' + (r.trace || []).join(' → ') };
         }
         if (S.screen === 'home') render();
       });
