@@ -5,6 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#ECF0ED">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Китайский">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png" type="image/png">
 <style>body{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
 <!-- ARTIFACT:START -->
 <title>Китайский вслух</title>
@@ -87,6 +92,8 @@ h2 { margin: 0; font-size: 17px; font-weight: 600; }
 .stat { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px; display: grid; gap: 2px; }
 .stat b { font-size: 26px; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .stat span { font-size: 13px; color: var(--muted); }
+.stats.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ta { width: 100%; min-height: 72px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--paper); font: 14px/1.4 var(--f-ui); resize: vertical; }
 .chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .chip { min-height: 38px; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); font-size: 14px; display: inline-flex; gap: 6px; align-items: center; }
 .chip em { font-style: normal; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; }
@@ -175,25 +182,29 @@ h2 { margin: 0; font-size: 17px; font-weight: 600; }
 (function () {
 'use strict';
 
+// Если основной CDN недоступен, пробуем запасной
+if (!window.pinyinPro) { const s = document.createElement('script'); s.src = 'https://unpkg.com/pinyin-pro@3.29.3/dist/index.js'; document.head.appendChild(s); }
+
 // Ссылка на полную версию с микрофоном (для встроенного просмотра, где микрофон запрещён)
 const FULL_URL = 'https://vs363ru.github.io/chinese-trainer/';
 
 const THEMES = [
-  { id: 'greet', name: 'Вежливость' },
+  { id: 'greet', name: 'Вежливость и фразы' },
   { id: 'people', name: 'Люди и семья' },
   { id: 'num', name: 'Числа' },
   { id: 'verb', name: 'Действия' },
   { id: 'adj', name: 'Качества' },
   { id: 'time', name: 'Время' },
-  { id: 'ask', name: 'Вопросы' },
-  { id: 'place', name: 'Еда и места' },
+  { id: 'ask', name: 'Вопросы и указатели' },
+  { id: 'place', name: 'Еда и страны' },
+  { id: 'city', name: 'Город и транспорт' },
   { id: 'trade', name: 'Закупки' },
 ];
 
 // [тема, иероглифы, слоги с номером тона (5 — нейтральный; «_» внутри слова, пробел между словами), переводы, пояснение]
 // Первый перевод — основной, остальные тоже засчитываются.
 const RAW = [
-  ['greet', '你好', 'ni3 hao3', ['привет', 'здравствуйте', 'здравствуй', 'добрый день']],
+  ['greet', '你好', 'ni3 hao3', ['привет', 'здравствуйте', 'здравствуй', 'добрый день'], 'два 3-х тона подряд: первый звучит как 2-й — ní hǎo'],
   ['greet', '您好', 'nin2 hao3', ['здравствуйте', 'привет', 'добрый день'], 'вежливо, к старшим и клиентам'],
   ['greet', '谢谢', 'xie4_xie5', ['спасибо', 'благодарю']],
   ['greet', '不客气', 'bu2 ke4_qi5', ['не за что', 'пожалуйста', 'не стоит благодарности'], 'ответ на «спасибо»'],
@@ -204,6 +215,8 @@ const RAW = [
   ['greet', '不', 'bu4', ['нет', 'не']],
   ['greet', '对', 'dui4', ['правильно', 'верно', 'да', 'точно']],
   ['greet', '好', 'hao3', ['хорошо', 'хороший', 'ладно']],
+  ['greet', '听不懂', 'ting1_bu5_dong3', ['не понимаю', 'не понимаю на слух', 'не понял'], 'не понимаю на слух'],
+  ['greet', '慢一点', 'man4 yi4_dian3', ['помедленнее', 'медленнее', 'немного медленнее'], 'просьба говорить медленнее'],
 
   ['people', '我', 'wo3', ['я']],
   ['people', '你', 'ni3', ['ты']],
@@ -236,6 +249,7 @@ const RAW = [
   ['num', '百', 'bai3', ['сто', '100', 'сотня']],
   ['num', '千', 'qian1', ['тысяча', '1000']],
   ['num', '两', 'liang3', ['два', '2', 'пара'], '«два» при счёте предметов: 两个'],
+  ['num', '个', 'ge4', ['штука', 'штук', 'счётное слово'], 'счётное слово: 三个 — три штуки'],
 
   ['verb', '是', 'shi4', ['быть', 'являться', 'да']],
   ['verb', '有', 'you3', ['иметь', 'есть', 'имеется']],
@@ -256,7 +270,7 @@ const RAW = [
   ['verb', '喜欢', 'xi3_huan5', ['нравиться', 'любить']],
   ['verb', '知道', 'zhi1_dao4', ['знать']],
   ['verb', '会', 'hui4', ['уметь', 'мочь']],
-  ['verb', '可以', 'ke3_yi3', ['можно', 'мочь']],
+  ['verb', '可以', 'ke3_yi3', ['можно', 'мочь'], 'два 3-х тона: звучит как ké yǐ'],
   ['verb', '工作', 'gong1_zuo4', ['работа', 'работать']],
   ['verb', '学习', 'xue2_xi2', ['учиться', 'учить', 'изучать', 'учёба']],
   ['verb', '睡觉', 'shui4_jiao4', ['спать']],
@@ -289,12 +303,14 @@ const RAW = [
 
   ['ask', '什么', 'shen2_me5', ['что', 'какой']],
   ['ask', '谁', 'shei2', ['кто']],
-  ['ask', '哪里', 'na3_li3', ['где', 'куда']],
+  ['ask', '哪里', 'na3_li3', ['где', 'куда'], 'два 3-х тона: звучит как ná lǐ'],
   ['ask', '几', 'ji3', ['сколько'], 'про небольшие числа, обычно до 10'],
   ['ask', '多少', 'duo1_shao5', ['сколько']],
   ['ask', '为什么', 'wei4_shen2_me5', ['почему', 'зачем']],
   ['ask', '怎么', 'zen3_me5', ['как']],
   ['ask', '什么时候', 'shen2_me5 shi2_hou5', ['когда']],
+  ['ask', '这个', 'zhe4_ge5', ['это', 'этот', 'вот этот', 'эта']],
+  ['ask', '那个', 'na4_ge5', ['тот', 'то', 'вон тот', 'та']],
 
   ['place', '水', 'shui3', ['вода']],
   ['place', '茶', 'cha2', ['чай']],
@@ -304,11 +320,17 @@ const RAW = [
   ['place', '中国', 'Zhong1_guo2', ['китай']],
   ['place', '俄罗斯', 'E2_luo2_si1', ['россия']],
   ['place', '中文', 'Zhong1_wen2', ['китайский язык', 'китайский']],
-  ['place', '酒店', 'jiu3_dian4', ['отель', 'гостиница']],
-  ['place', '机场', 'ji1_chang3', ['аэропорт']],
-  ['place', '厕所', 'ce4_suo3', ['туалет']],
-  ['place', '商店', 'shang1_dian4', ['магазин']],
-  ['place', '出租车', 'chu1_zu1_che1', ['такси']],
+  ['place', '啤酒', 'pi2_jiu3', ['пиво']],
+
+  ['city', '酒店', 'jiu3_dian4', ['отель', 'гостиница']],
+  ['city', '机场', 'ji1_chang3', ['аэропорт']],
+  ['city', '火车站', 'huo3_che1_zhan4', ['вокзал', 'железнодорожный вокзал', 'жд вокзал']],
+  ['city', '地铁', 'di4_tie3', ['метро']],
+  ['city', '出租车', 'chu1_zu1_che1', ['такси']],
+  ['city', '商店', 'shang1_dian4', ['магазин']],
+  ['city', '银行', 'yin2_hang2', ['банк']],
+  ['city', '医院', 'yi1_yuan4', ['больница']],
+  ['city', '厕所', 'ce4_suo3', ['туалет']],
 
   ['trade', '钱', 'qian2', ['деньги']],
   ['trade', '多少钱', 'duo1_shao5 qian2', ['сколько стоит', 'сколько денег', 'почём', 'какая цена']],
@@ -320,6 +342,20 @@ const RAW = [
   ['trade', '发货', 'fa1_huo4', ['отгрузка', 'отгрузить', 'отправка', 'отправить товар']],
   ['trade', '没问题', 'mei2 wen4_ti2', ['нет проблем', 'без проблем', 'не проблема']],
   ['trade', '便宜一点', 'pian2_yi5 yi4_dian3', ['подешевле', 'дешевле', 'немного дешевле']],
+  ['trade', '太贵了', 'tai4 gui4 le5', ['слишком дорого', 'очень дорого', 'дороговато']],
+  ['trade', '数量', 'shu4_liang4', ['количество']],
+  ['trade', '公斤', 'gong1_jin1', ['килограмм', 'кг', 'кило']],
+  ['trade', '包装', 'bao1_zhuang1', ['упаковка', 'упаковывать']],
+  ['trade', '集装箱', 'ji2_zhuang1_xiang1', ['контейнер']],
+  ['trade', '交货', 'jiao1_huo4', ['поставка', 'поставить товар', 'доставка', 'сдать товар']],
+  ['trade', '合同', 'he2_tong5', ['договор', 'контракт']],
+  ['trade', '发票', 'fa1_piao4', ['инвойс', 'счёт-фактура', 'счет фактура', 'фапяо', 'счёт']],
+  ['trade', '付款', 'fu4_kuan3', ['оплата', 'платить', 'оплатить', 'платёж']],
+  ['trade', '定金', 'ding4_jin1', ['предоплата', 'задаток', 'аванс', 'депозит']],
+  ['trade', '公司', 'gong1_si1', ['компания', 'фирма']],
+  ['trade', '老板', 'lao3_ban3', ['босс', 'хозяин', 'начальник', 'владелец'], 'два 3-х тона: звучит как láo bǎn'],
+  ['trade', '问题', 'wen4_ti2', ['проблема', 'вопрос']],
+  ['trade', '微信', 'Wei1_xin4', ['вичат', 'wechat', 'вечат', 'ви чат']],
 ];
 
 /* ---------- Пиньинь ---------- */
@@ -473,22 +509,25 @@ function finalHint(a, b) {
   return '';
 }
 function describeSyl(want, got) {
-  if (!got) return { bad: true, text: 'не расслышан слог ' + sylLabel(want) };
+  if (!got) return { bad: true, kind: 'missing', text: 'не расслышан слог ' + sylLabel(want) };
   if (want.base === got.base) {
     if (toneOk(want.tone, got.tone, want.base)) return { bad: false };
-    return { bad: true, text: sylLabel(want) + ': прозвучал ' + TONE_NAME[got.tone] + ' тон вместо ' + TONE_NAME[want.tone] + '. ' + TONE_HINT[want.tone] };
+    return { bad: true, kind: 'tone', tone: want.tone, text: sylLabel(want) + ': прозвучал ' + TONE_NAME[got.tone] + ' тон вместо ' + TONE_NAME[want.tone] + '. ' + TONE_HINT[want.tone] };
   }
   const [wi, wf] = splitSyl(want.base), [gi, gf] = splitSyl(got.base);
   const parts = [];
+  let pair = null;
   if (wi !== gi) {
+    pair = [wi || '—', gi || '—'].sort().join('/');
     const hint = INIT_HINTS[[wi, gi].sort().join('/')];
     parts.push('согласная «' + (wi || '—') + '», а прозвучало «' + (gi || '—') + '»' + (hint ? '. ' + hint : ''));
   }
   if (wf !== gf) {
     const hint = finalHint(wf, gf);
+    if (!pair) pair = [wf, gf].sort().join('/');
     parts.push('гласная часть «' + wf + '», а прозвучало «' + gf + '»' + (hint ? '. ' + hint : ''));
   }
-  return { bad: true, text: sylLabel(want) + ' → ' + sylLabel(got) + ': ' + parts.join('; ') };
+  return { bad: true, kind: 'sound', pair, text: sylLabel(want) + ' → ' + sylLabel(got) + ': ' + parts.join('; ') };
 }
 
 /* ---------- Проверка ввода пиньинем (режим с клавиатурой) ---------- */
@@ -513,7 +552,8 @@ function checkTyped(word, input) {
     if (tones.length !== cmp.length) return { level: 'tonecount' };
   }
   const bases = tones.length === wantT.length ? word.syl.map(x => x.base) : word.syl.filter(x => x.tone !== 0).map(x => x.base);
-  const ok = cmp.every((t, k) => t === 0 || t === tones[k] || bases[k] === 'yi' || bases[k] === 'bu');
+  // 3-й тон перед 3-м произносится как 2-й (ní hǎo) — принимаем и такую запись
+  const ok = cmp.every((t, k) => t === 0 || t === tones[k] || bases[k] === 'yi' || bases[k] === 'bu' || (t === 3 && tones[k] === 2 && cmp[k + 1] === 3));
   return ok ? { level: 'exact' } : { level: 'tone', tones, want: cmp };
 }
 
@@ -574,10 +614,20 @@ function checkTranslation(word, alts, strictHanzi) {
 }
 
 /* ---------- Хранилище ---------- */
-const KEY_SET = 'kv.settings.v1', KEY_PROG = 'kv.progress.v1';
+const KEY_SET = 'kv.settings.v1', KEY_PROG = 'kv.progress.v1', KEY_STATS = 'kv.stats.v1';
 function load(key, def) { try { const v = localStorage.getItem(key); return v ? Object.assign(def, JSON.parse(v)) : def; } catch (e) { return def; } }
 function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* хранилище недоступно */ } }
-const DEFAULTS = () => ({ themes: THEMES.map(t => t.id), roundSize: 10, newPerRound: 4, showHanzi: true, showPinyin: true, rate: 0.8, autoMic: true, autoNext: true, input: 'voice', voiceURI: '' });
+const DEFAULTS = () => ({ themes: THEMES.map(t => t.id), roundSize: 10, newPerRound: 4, showHanzi: true, showPinyin: true, rate: 0.8, autoMic: true, autoNext: true, input: 'voice', voiceURI: '', direction: 'mix', beep: false });
+let ST = load(KEY_STATS, { days: {}, tones: {}, pairs: {} });
+ST.days = ST.days || {}; ST.tones = ST.tones || {}; ST.pairs = ST.pairs || {};
+function dayKey(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function noteDay() { const k = dayKey(); ST.days[k] = (ST.days[k] || 0) + 1; save(KEY_STATS, ST); }
+function streak() {
+  let n = 0; const d = new Date();
+  if (!ST.days[dayKey(d)]) d.setDate(d.getDate() - 1);
+  while (ST.days[dayKey(d)]) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
 const DAY = 864e5;
 const INTERVAL = [0, 0, DAY, 3 * DAY, 7 * DAY, 21 * DAY];
 
@@ -594,10 +644,13 @@ const S = {
   micBlocked: false,
   micTest: null,
   resetArm: false,
+  note: '',
+  backupText: '',
   inFrame: (() => { try { return window.self !== window.top; } catch (e) { return true; } })(),
 };
 S.set.themes = S.set.themes.filter(id => THEME_NAME[id]);
 if (!S.set.themes.length) S.set.themes = THEMES.map(t => t.id);
+if (!['mix', 'zh', 'ru'].includes(S.set.direction)) S.set.direction = 'mix';
 function useVoice() { return !!SR && !S.micBlocked && S.set.input !== 'text'; }
 function P(id) { return S.prog[id] || null; }
 
@@ -619,25 +672,61 @@ function pickVoice() {
     || vs.find(v => /ting|xiaoxiao|yunxi|li-?mu|yu-?shu/i.test(v.name))
     || vs[0];
 }
-function speak(text, rate) {
+function ruVoice() {
+  const ss = window.speechSynthesis;
+  if (!ss) return null;
+  const vs = ss.getVoices().filter(v => /^ru/i.test(v.lang));
+  return vs.find(v => /google/i.test(v.name)) || vs[0] || null;
+}
+function speak(text, rate, lang) {
   return new Promise(resolve => {
     const ss = window.speechSynthesis;
     if (!ss || !window.SpeechSynthesisUtterance) { resolve(false); return; }
     try { ss.cancel(); } catch (e) { /* нет активной речи */ }
     const u = new SpeechSynthesisUtterance(text);
     utter = u;
-    u.lang = 'zh-CN';
-    const v = pickVoice();
+    u.lang = lang || 'zh-CN';
+    const v = lang === 'ru-RU' ? ruVoice() : pickVoice();
     if (v) u.voice = v;
     u.rate = rate || S.set.rate;
     let done = false;
-    const fin = ok => { if (done) return; done = true; clearTimeout(t); S.speaking = false; resolve(ok); };
+    // Отменённая предыдущая фраза не должна сбрасывать флаг текущей
+    const fin = ok => { if (done) return; done = true; clearTimeout(t); if (utter === u) S.speaking = false; resolve(ok); };
     const t = setTimeout(() => fin(true), 1800 + text.length * 900 / u.rate);
     u.onend = () => fin(true);
     u.onerror = () => fin(false);
     S.speaking = true;
-    ss.speak(u);
+    try { ss.speak(u); } catch (e) { fin(false); }
   });
+}
+
+/* ---------- Экран не гаснет во время раунда; сигнал микрофона ---------- */
+let wl = null;
+function wakeOn() {
+  try {
+    if (!navigator.wakeLock || wl) return;
+    navigator.wakeLock.request('screen').then(l => { wl = l; l.addEventListener('release', () => { if (wl === l) wl = null; }); }, () => { wl = null; });
+  } catch (e) { wl = null; }
+}
+function wakeOff() { try { if (wl) { wl.release(); wl = null; } } catch (e) { wl = null; } }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && S.screen === 'card') wakeOn(); });
+let ac = null;
+function ensureAudio() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    if (!ac) ac = new AC();
+    if (ac.state === 'suspended') ac.resume();
+  } catch (e) { ac = null; }
+}
+function beep() {
+  if (!S.set.beep || !ac) return;
+  try {
+    const o = ac.createOscillator(), g = ac.createGain(), t = ac.currentTime;
+    o.frequency.value = 880; o.connect(g); g.connect(ac.destination);
+    g.gain.setValueAtTime(0.08, t); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+    o.start(t); o.stop(t + 0.13);
+  } catch (e) { /* звук не обязателен */ }
 }
 if (window.speechSynthesis) {
   try { window.speechSynthesis.onvoiceschanged = () => { if (S.screen === 'home' || S.screen === 'settings') render(); }; } catch (e) { /* старый браузер */ }
@@ -697,7 +786,16 @@ const ERR_TEXT = {
 };
 
 /* ---------- Раунд ---------- */
-function buildRound() {
+function dirFor(w) {
+  if (S.set.direction === 'ru') return 'ru';
+  if (S.set.direction === 'mix' && P(w.id) && P(w.id).box >= 3) return 'ru';
+  return 'zh';
+}
+function buildRound(ids) {
+  if (ids && ids.length) {
+    const queue = shuffle(ids.slice()).slice(0, S.set.roundSize).map(id => ({ id, mode: 'review', dir: dirFor(BY_ID[id]) }));
+    return { queue, idx: 0, first: {}, final: {}, order: [] };
+  }
   const now = Date.now();
   let pool = WORDS.filter(w => S.set.themes.includes(w.t));
   if (!pool.length) pool = WORDS;
@@ -707,16 +805,19 @@ function buildRound() {
   const due = seen.filter(w => now - P(w.id).last >= INTERVAL[P(w.id).box]).sort((a, b) => (P(a.id).box - P(b.id).box) || (P(a.id).last - P(b.id).last));
   const nNew = Math.min(S.set.newPerRound, fresh.length);
   const reviews = due.slice(0, Math.max(0, N - nNew));
-  const news = fresh.slice(0, Math.min(Math.max(nNew, Math.ceil(N / 2)), N - reviews.length));
+  let news = fresh.slice(0, nNew);
   if (reviews.length + news.length < N) {
+    // Не хватает слов к повторению: добираем давно не повторявшиеся
     const rest = seen.filter(w => !reviews.includes(w)).sort((a, b) => P(a.id).last - P(b.id).last);
     reviews.push(...rest.slice(0, N - reviews.length - news.length));
   }
+  // Изученных слов всё ещё мало (начало обучения): дополняем раунд новыми сверх настройки
+  if (reviews.length + news.length < N) news = fresh.slice(0, N - reviews.length);
   shuffle(reviews);
   const queue = [];
   let r = 0, n = 0;
   while (r < reviews.length || n < news.length) {
-    if (r < reviews.length) queue.push({ id: reviews[r++].id, mode: 'review' });
+    if (r < reviews.length) { const w = reviews[r++]; queue.push({ id: w.id, mode: 'review', dir: dirFor(w) }); }
     if (n < news.length) queue.push({ id: news[n++].id, mode: 'intro' });
   }
   return { queue, idx: 0, first: {}, final: {}, order: [] };
@@ -737,9 +838,28 @@ function grade(id, ok) {
     p.last = Date.now();
     S.prog[id] = p;
     save(KEY_PROG, S.prog);
+    noteDay();
   }
   R.final[id] = ok;
 }
+// Статистика ошибок произношения: по тонам и по парам звуков
+function recordErr(w, res) {
+  if (!res || !res.hs || !res.hs.length) return;
+  const al = res.level === 'tone' ? w.syl.map((t, j) => ({ want: t, got: res.hs[res.pos + j] })) : alignSyls(res.hs, w.syl);
+  const p = S.prog[w.id] || (S.prog[w.id] = { box: 0, last: 0, seen: 0, wrong: 0 });
+  al.forEach(x => {
+    const d = describeSyl(x.want, x.got);
+    if (!d.bad) return;
+    if (d.kind === 'tone') { p.te = (p.te || 0) + 1; ST.tones[d.tone] = (ST.tones[d.tone] || 0) + 1; }
+    else if (d.kind === 'sound') { p.se = (p.se || 0) + 1; if (d.pair) ST.pairs[d.pair] = (ST.pairs[d.pair] || 0) + 1; }
+  });
+  save(KEY_PROG, S.prog); save(KEY_STATS, ST);
+}
+function hardWords() {
+  const score = w => { const p = P(w.id); return p ? p.wrong + (p.te || 0) + (p.se || 0) : 0; };
+  return WORDS.filter(w => score(w) >= 2).sort((a, b) => score(b) - score(a)).slice(0, 8);
+}
+function dueCount() { const now = Date.now(); return WORDS.filter(w => P(w.id) && now - P(w.id).last >= INTERVAL[P(w.id).box]).length; }
 
 /* ---------- Карточка ---------- */
 let timers = [];
@@ -748,16 +868,19 @@ function clearTimers() { timers.forEach(clearTimeout); timers = []; }
 function curItem() { return S.round.queue[S.round.idx]; }
 function curWord() { return BY_ID[curItem().id]; }
 
-function startRound() {
-  S.round = buildRound();
+function startRound(ids) {
+  S.round = buildRound(ids);
   if (!S.round.queue.length) return;
   S.screen = 'card';
+  wakeOn();
   startCard();
 }
 function startCard() {
   clearTimers();
   abortListening();
-  S.card = { phase: 'repeat', attempts: 0, tr: 0, fb: null, pron: null, live: '', reveal: false };
+  const item = curItem();
+  const dir = item.dir === 'ru' ? 'ru' : 'zh';
+  S.card = { phase: dir === 'ru' ? 'say' : 'repeat', dir, attempts: 0, tr: 0, fb: null, pron: null, live: '', reveal: false };
   render();
   playThenListen();
 }
@@ -765,10 +888,14 @@ function playThenListen(slow) {
   const w = curWord();
   const c = S.card;
   abortListening();
-  speak(w.h, slow ? Math.max(0.45, S.set.rate - 0.3) : S.set.rate).then(() => {
+  // В обратном режиме задание — перевод по-русски; китайское слово не озвучиваем до ответа
+  const p = c.phase === 'say'
+    ? (ruVoice() ? speak(w.r[0], 1, 'ru-RU') : Promise.resolve(false))
+    : speak(w.h, slow ? Math.max(0.45, S.set.rate - 0.3) : S.set.rate);
+  p.then(() => {
     if (S.card !== c || S.screen !== 'card') return;
     render();
-    if (S.set.autoMic && useVoice() && (c.phase === 'repeat' || c.phase === 'translate')) later(() => { if (S.card === c && !S.listening) startListening(false); }, 350);
+    if (S.set.autoMic && useVoice() && (c.phase === 'repeat' || c.phase === 'translate' || c.phase === 'say')) later(() => { if (S.card === c && !S.listening) startListening(false); }, 350);
   });
   render();
 }
@@ -781,6 +908,7 @@ function startListening(byUser) {
   S.listening = phase;
   c.live = '';
   render();
+  beep();
   listen(lang, txt => { c.live = txt; const el = document.getElementById('live'); if (el) el.textContent = 'Слышу: ' + txt; }).then(res => {
     S.listening = null;
     if (S.card !== c || S.screen !== 'card') return;
@@ -802,6 +930,7 @@ function startListening(byUser) {
     }
     if (c.phase !== phase) { render(); return; }
     if (phase === 'repeat') onPron(checkPron(curWord(), res.alts));
+    else if (phase === 'say') onSay(checkPron(curWord(), res.alts));
     else if (phase === 'translate') onTranslate(checkTranslation(curWord(), res.alts, S.set.showHanzi));
   });
 }
@@ -833,9 +962,44 @@ function onPron(res) {
       lines.push('Подробный разбор недоступен: не загрузилась библиотека пиньиня.');
     }
   }
+  recordErr(w, res);
   c.fb = { kind: res.level === 'tone' ? 'warn' : 'bad', tag: res.level === 'tone' ? 'Проверьте тон' : 'Не совпало', lines };
   if (c.attempts >= 3) c.fb.lines.push('Три попытки — можно перейти дальше и вернуться к слову позже.');
   render();
+}
+/* Обратный режим: показан перевод, нужно сказать слово по-китайски */
+function sayOk(res, manual) {
+  const c = S.card, w = curWord();
+  c.pron = 'ok'; c.phase = 'result'; c.reveal = true;
+  finishCard(true);
+  c.fb = { kind: manual ? 'info' : 'ok', tag: manual ? 'Засчитано вручную' : 'Верно', lines: [(res && res.heard ? 'Распознано: ' + zhSpan(res.heard) + '. ' : '') + zhSpan(w.h) + ' ' + pySpan(w.py)] };
+  render();
+  speak(w.h);
+  if (S.set.autoNext) later(() => { if (S.card === c && c.phase === 'result') next(); }, 2400);
+}
+function onSay(res) {
+  const c = S.card, w = curWord();
+  c.attempts++;
+  if (res.level === 'exact' || res.level === 'homo') { sayOk(res, false); return; }
+  const lines = [];
+  const hsText = res.hs && res.hs.length ? ' (' + pySpan(res.hs.map(sylLabel).join(' ')) + ')' : '';
+  if (res.level === 'none') lines.push('Ничего не распознано. Скажите громче и ближе к микрофону.');
+  else if (res.level === 'tone') {
+    lines.push('Распознано: ' + zhSpan(res.heard) + hsText + '. Слоги верные, проверьте тон: ' + pySpan(w.py) + '.');
+    w.syl.map((t, j) => describeSyl(t, res.hs[res.pos + j])).filter(d => d.bad).slice(0, 2).forEach(d => lines.push(esc(d.text)));
+  } else lines.push('Распознано: ' + zhSpan(res.heard) + hsText + '. Это другое слово.');
+  recordErr(w, res);
+  c.fb = { kind: res.level === 'tone' ? 'warn' : 'bad', tag: res.level === 'tone' ? 'Проверьте тон' : 'Не совпало', lines };
+  if (c.attempts >= 3) c.fb.lines.push('Три попытки — нажмите «Показать ответ».');
+  render();
+}
+function revealSay() {
+  const c = S.card, w = curWord();
+  c.phase = 'result'; c.reveal = true; c.pron = 'weak';
+  finishCard(false);
+  c.fb = { kind: 'bad', tag: 'Ответ', lines: [zhSpan(w.h) + ' ' + pySpan(w.py) + ' — ' + esc(w.r[0]), 'Слово вернётся в конце раунда.'] };
+  render();
+  speak(w.h);
 }
 function advanceAfterPron() {
   const c = S.card;
@@ -851,6 +1015,7 @@ function advanceAfterPron() {
 }
 function acceptPron() {
   const c = S.card;
+  if (c.phase === 'say') { sayOk(null, true); return; }
   c.pron = c.attempts >= 3 && c.fb && c.fb.kind !== 'ok' ? 'weak' : 'ok';
   c.fb = { kind: 'info', tag: 'Засчитано вручную', lines: ['Если распознавание ошиблось, а вы уверены в произношении — двигаемся дальше.'] };
   advanceAfterPron();
@@ -934,11 +1099,25 @@ function next() {
   clearTimers();
   abortListening();
   S.round.idx++;
-  if (S.round.idx >= S.round.queue.length) { S.screen = 'summary'; S.card = null; render(); return; }
+  if (S.round.idx >= S.round.queue.length) { S.screen = 'summary'; S.card = null; wakeOff(); render(); return; }
   startCard();
 }
 function submitTyped(value) {
   const c = S.card, w = curWord();
+  if (c.phase === 'say') {
+    const r = checkTyped(w, value);
+    c.attempts++;
+    if (r.level === 'exact' || r.level === 'notones') { sayOk(null, false); return; }
+    const lines = [];
+    if (r.level === 'none') lines.push('Введите слоги латиницей, например: ni3 hao3.');
+    else if (r.level === 'miss') lines.push('У вас: ' + pySpan(r.letters) + '. Это другое слово.');
+    else if (r.level === 'tonecount') lines.push('Слоги верные, но число тонов не совпадает со слогами.');
+    else lines.push('Слоги верные. Тоны: нужно ' + r.want.map(t => TONE_NAME[t]).join(', ') + ', у вас ' + r.tones.map(t => TONE_NAME[t]).join(', ') + '.');
+    c.fb = { kind: r.level === 'miss' || r.level === 'none' ? 'bad' : 'warn', tag: 'Не совпало', lines };
+    if (c.attempts >= 3) c.fb.lines.push('Три попытки — нажмите «Показать ответ».');
+    render();
+    return;
+  }
   if (c.phase === 'repeat') {
     const r = checkTyped(w, value);
     c.attempts++;
@@ -1010,17 +1189,33 @@ function viewHome() {
     ? '<p class="note">Страница открыта во встроенном окне. Здесь браузер может не дать микрофон — тогда ответы вводятся с клавиатуры.' + (FULL_URL ? ' <a href="' + esc(FULL_URL) + '" target="_blank" rel="noopener">Открыть полную версию с голосом</a>' : '') + '</p>'
     : '';
   const N = new Set(buildRound().queue.map(q => q.id)).size;
-  return '<header class="top"><div class="brand"><span class="seal" aria-hidden="true">汉</span><div><h1>Китайский вслух</h1><p class="sub">' + total + ' базовых слов: слушать, повторять, переводить</p></div></div>'
+  const due = dueCount(), sk = streak();
+  const tones = Object.entries(ST.tones).filter(x => x[1] >= 2).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const pairs = Object.entries(ST.pairs).filter(x => x[1] >= 2).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  const hard = hardWords();
+  const weak = tones.map(x => ['warn', TONE_NAME[x[0]] + ' тон — ' + x[1] + ' ' + plural(x[1], 'ошибка', 'ошибки', 'ошибок') + '. ' + (TONE_HINT[x[0]] || '')])
+    .concat(pairs.map(x => ['warn', 'Звуки ' + esc(x[0]) + ' — ' + x[1] + ' ' + plural(x[1], 'ошибка', 'ошибки', 'ошибок') + (INIT_HINTS[x[0]] ? '. ' + INIT_HINTS[x[0]] : '')]));
+  const weakPanel = weak.length || hard.length
+    ? '<section class="panel"><h2>Слабые места</h2>'
+      + (weak.length ? '<ul class="checks">' + weak.map(c => '<li><span class="dot ' + c[0] + '"></span><span>' + c[1] + '</span></li>').join('') + '</ul>' : '')
+      + (hard.length ? '<div class="list">' + hard.map(w => '<button class="li" data-act="say" data-id="' + esc(w.id) + '"><span class="h" lang="zh-CN">' + esc(w.h) + '</span><span><span class="p">' + pinyinHtml(w.s) + '</span><br><span class="r">' + esc(w.r[0]) + '</span></span><span class="res bad">' + (P(w.id).wrong + (P(w.id).te || 0) + (P(w.id).se || 0)) + ' ош.</span></button>').join('') + '</div>'
+        + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="hard">Повторить трудные · ' + hard.length + '</button></div>' : '')
+      + '</section>'
+    : '';
+  return '<header class="top"><div class="brand"><span class="seal" aria-hidden="true">汉</span><div><h1>Китайский вслух</h1><p class="sub">' + total + ' базовых слов: слушать, повторять, переводить, говорить</p></div></div>'
     + '<button class="iconbtn" data-act="settings" aria-label="Настройки">' + ICON.gear + '</button></header>'
     + '<section class="stats" aria-label="Прогресс"><div class="stat"><b>' + learned + '</b><span>выучено</span></div><div class="stat"><b>' + inWork + '</b><span>в работе</span></div><div class="stat"><b>' + fresh + '</b><span>новых</span></div></section>'
+    + '<section class="stats two" aria-label="Сегодня"><div class="stat"><b>' + due + '</b><span>к повторению сегодня</span></div><div class="stat"><b>' + sk + '</b><span>' + plural(sk, 'день', 'дня', 'дней') + ' подряд</span></div></section>'
     + '<section class="panel"><h2>Темы</h2><div class="chips">' + chips + '</div>'
     + '<button class="btn primary big" data-act="start">Начать раунд · ' + N + ' ' + plural(N, 'слово', 'слова', 'слов') + '</button></section>'
+    + weakPanel
     + frameNote
     + '<section class="panel"><h2>Как проходит раунд</h2><ol class="howto">'
     + '<li>Программа произносит слово по-китайски.</li>'
     + '<li>Вы повторяете. Она сверяет слоги и тоны и показывает, что прозвучало не так.</li>'
-    + '<li>Вы говорите перевод по-русски. Она проверяет его.</li></ol>'
-    + '<p class="muted small" style="margin:0">Новое слово сначала показывается с переводом, а спрашивается через пару карточек. Ошибки возвращаются в конце раунда, выученные слова — через 1, 3, 7 и 21 день.</p></section>'
+    + '<li>Вы говорите перевод по-русски. Она проверяет его.</li>'
+    + '<li>Выученные слова (уровень 3+) идут наоборот: она называет перевод, вы говорите по-китайски.</li></ol>'
+    + '<p class="muted small" style="margin:0">Новое слово сначала показывается с переводом, а спрашивается через пару карточек. Ошибки возвращаются в конце раунда, выученные слова — через 1, 3, 7 и 21 день. Направление можно изменить в настройках.</p></section>'
     + '<section class="panel"><h2>Проверка устройства</h2><ul class="checks">' + checks.map(c => '<li><span class="dot ' + c[0] + '"></span><span>' + c[1] + '</span></li>').join('') + '</ul>'
     + (useVoice() ? '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="mictest">' + ICON.mic + ' Проверить микрофон</button><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div>' : (ttsOk ? '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div>' : ''))
     + '<p class="muted small" style="margin:0">Проверку делает распознавание речи браузера: оно определяет, какое слово вы сказали, но тон оценивает не так тонко, как преподаватель. Если уверены, что сказали верно, нажмите «Засчитать».</p></section>'
@@ -1031,10 +1226,12 @@ function viewCard() {
   const R = S.round, c = S.card, item = curItem(), w = curWord();
   const pct = Math.round(R.idx / R.queue.length * 100);
   const isIntro = item.mode === 'intro';
-  const showHz = S.set.showHanzi || c.reveal;
-  const showPy = S.set.showPinyin || c.reveal;
-  const steps = isIntro ? ['Слушать', 'Повторить', 'Запомнить'] : ['Слушать', 'Повторить', 'Перевести'];
-  const stepIdx = c.phase === 'repeat' ? (S.speaking ? 0 : 1) : 2;
+  const isRu = c.dir === 'ru';
+  const saying = c.phase === 'say';
+  const showHz = (S.set.showHanzi && !saying) || c.reveal;
+  const showPy = (S.set.showPinyin && !saying) || c.reveal;
+  const steps = isRu ? ['Вспомнить', 'Сказать', 'Ответ'] : isIntro ? ['Слушать', 'Повторить', 'Запомнить'] : ['Слушать', 'Повторить', 'Перевести'];
+  const stepIdx = isRu ? (saying ? (c.attempts > 0 || S.listening ? 1 : 0) : 2) : c.phase === 'repeat' ? (S.speaking ? 0 : 1) : 2;
   const stepsHtml = steps.map((s, k) => '<li class="' + (k < stepIdx || c.phase === 'result' ? 'done' : k === stepIdx ? 'on' : '') + '">' + s + '</li>').join('');
   let area = '';
   const fb = c.fb ? '<div class="fb ' + c.fb.kind + '" role="status"><b class="tag">' + esc(c.fb.tag) + '</b>' + c.fb.lines.map(l => '<div>' + l + '</div>').join('') + '</div>' : '';
@@ -1054,6 +1251,13 @@ function viewCard() {
       area += '<div class="row"><button class="btn" data-act="retry">' + ICON.play + ' Послушать и повторить</button><button class="btn" data-act="acceptpron">Засчитать</button>'
         + (c.attempts >= 3 ? '<button class="btn primary" data-act="skippron">Дальше</button>' : '') + '</div>';
     }
+  } else if (saying) {
+    area = '<div class="meaning">' + esc(w.r[0]) + '</div>'
+      + '<div class="prompt">' + (voice ? 'Скажите по-китайски' : 'Напишите пиньинем') + '</div>'
+      + micBtn('Сказать по-китайски') + typed('Пиньинь: ni3 hao3 или nǐ hǎo')
+      + fb
+      + '<div class="row">' + (c.attempts > 0 ? '<button class="btn" data-act="acceptpron">Засчитать</button>' : '')
+      + '<button class="btn quiet" data-act="reveal">' + (c.attempts > 0 ? 'Показать ответ' : 'Не знаю') + '</button></div>';
   } else if (c.phase === 'reveal') {
     area = fb + '<div class="meaning">' + esc(w.r[0]) + (w.n ? '<small>' + esc(w.n) + '</small>' : '') + '</div>'
       + '<p class="muted small" style="margin:0">Запомните перевод — спрошу через пару карточек.</p>'
@@ -1071,12 +1275,14 @@ function viewCard() {
     + '<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>'
     + '<span class="count">' + (R.idx + 1) + '/' + R.queue.length + '</span></header>'
     + '<section class="card">'
-    + '<div class="meta"><span class="badge' + (isIntro ? ' new' : '') + '">' + (isIntro ? 'Новое слово' : item.mode === 'recall' ? 'Вспомните' : 'Повторение') + '</span><span>' + esc(THEME_NAME[w.t]) + '</span></div>'
+    + '<div class="meta"><span class="badge' + (isIntro ? ' new' : '') + '">' + (isIntro ? 'Новое слово' : item.mode === 'recall' ? 'Вспомните' : isRu ? 'По-китайски' : 'Повторение') + '</span><span>' + esc(THEME_NAME[w.t]) + '</span></div>'
     + '<button class="word" data-act="play" aria-label="Прослушать слово">'
     + (showHz ? '<span class="hz" lang="zh-CN">' + esc(w.h) + '</span>' : '<span class="hz hidden">· · ·</span>')
     + (showPy ? '<span class="py">' + pinyinHtml(w.s) + '</span>' : '')
     + '</button>'
-    + '<div class="row"><button class="btn" data-act="play">' + ICON.play + ' Ещё раз</button><button class="btn" data-act="slow">Медленно</button></div>'
+    + (saying
+      ? (ruVoice() ? '<div class="row"><button class="btn" data-act="play">' + ICON.play + ' Повторить задание</button></div>' : '')
+      : '<div class="row"><button class="btn" data-act="play">' + ICON.play + ' Ещё раз</button><button class="btn" data-act="slow">Медленно</button></div>')
     + '<ol class="steps">' + stepsHtml + '</ol>'
     + area
     + '</section>';
@@ -1120,13 +1326,19 @@ function viewSettings() {
   return '<header class="top"><div class="brand"><button class="iconbtn" data-act="home" aria-label="Назад">' + ICON.back + '</button><div><h1>Настройки</h1></div></div></header>'
     + '<section class="panel"><span class="lab">Слов за раунд</span>' + seg('roundSize', [6, 10, 15, 20])
     + '<span class="lab">Из них новых</span>' + seg('newPerRound', [2, 4, 6, 8]) + '</section>'
+    + '<section class="panel"><span class="lab">Направление</span>' + seg('direction', ['mix', 'zh', 'ru'], v => v === 'mix' ? 'Смешанно' : v === 'zh' ? 'Слушать → переводить' : 'Говорить по-китайски')
+    + '<p class="muted small" style="margin:0">«Смешанно»: новые слова и слова в работе — слушать и переводить; выученные (уровень 3+) — программа называет перевод, а вы говорите по-китайски.</p></section>'
     + '<section class="panel"><span class="lab">Ответы</span>' + seg('input', ['voice', 'text'], v => v === 'voice' ? 'Голосом' : 'С клавиатуры')
-    + tog('autoMic', 'Микрофон включается сам после слова') + tog('autoNext', 'Переходить дальше после верного ответа') + '</section>'
+    + tog('autoMic', 'Микрофон включается сам после слова') + tog('autoNext', 'Переходить дальше после верного ответа') + tog('beep', 'Короткий сигнал, когда микрофон включился') + '</section>'
     + '<section class="panel">' + tog('showHanzi', 'Показывать иероглифы') + tog('showPinyin', 'Показывать пиньинь')
     + '<p class="muted small" style="margin:0">Без иероглифов и пиньиня — тренировка только на слух.</p></section>'
     + '<section class="panel"><div class="field"><label for="rate">Скорость речи: <span id="rateval">' + s.rate.toFixed(2) + '</span></label><input id="rate" type="range" min="0.5" max="1.1" step="0.05" value="' + s.rate + '" data-range="rate"></div>'
     + voiceSel + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div></section>'
-    + '<section class="panel"><span class="lab">Прогресс</span><p class="muted small" style="margin:0">Хранится в этом браузере на этом устройстве.</p>'
+    + '<section class="panel"><span class="lab">Резервная копия</span><p class="muted small" style="margin:0">Прогресс хранится в этом браузере. Safari может стереть данные сайта, если неделю им не пользоваться. Скопируйте прогресс в Заметки; чтобы вернуть его или перенести на другое устройство, вставьте текст в поле и нажмите «Восстановить».</p>'
+    + '<textarea id="backup" class="ta" rows="3" placeholder="Сюда вставьте сохранённый текст">' + esc(S.backupText) + '</textarea>'
+    + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="backup">Скопировать прогресс</button><button class="btn" data-act="restore">Восстановить</button></div>'
+    + (S.note ? '<p class="note">' + esc(S.note) + '</p>' : '') + '</section>'
+    + '<section class="panel"><span class="lab">Сброс</span>'
     + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="reset">' + (S.resetArm ? 'Нажмите ещё раз, чтобы стереть' : 'Сбросить прогресс') + '</button></div></section>';
 }
 
@@ -1137,11 +1349,14 @@ document.addEventListener('click', e => {
   const act = b.dataset.act;
   const c = S.card;
   if (act !== 'reset') S.resetArm = false;
+  if (act !== 'backup' && act !== 'restore') S.note = '';
+  if (S.set.beep) ensureAudio();
   switch (act) {
     case 'start': startRound(); break;
-    case 'home': clearTimers(); abortListening(); S.screen = 'home'; S.card = null; render(); break;
+    case 'hard': startRound(hardWords().map(w => w.id)); break;
+    case 'home': clearTimers(); abortListening(); wakeOff(); S.screen = 'home'; S.card = null; render(); break;
     case 'quit':
-      clearTimers(); abortListening();
+      clearTimers(); abortListening(); wakeOff();
       S.screen = S.round && S.round.order.length ? 'summary' : 'home'; S.card = null; render(); break;
     case 'settings': S.screen = 'settings'; render(); break;
     case 'dict': S.screen = 'dict'; render(); break;
@@ -1162,6 +1377,28 @@ document.addEventListener('click', e => {
     case 'skippron': skipPron(); break;
     case 'introdone': finishIntro(); break;
     case 'dontknow': abortListening(); onTranslate({ level: 'dontknow' }); break;
+    case 'reveal': if (c && c.phase === 'say') { clearTimers(); abortListening(); revealSay(); } break;
+    case 'backup': {
+      const data = JSON.stringify({ v: 1, at: new Date().toISOString(), prog: S.prog, stats: ST, set: S.set });
+      S.backupText = data;
+      const done = () => { S.note = 'Скопировано в буфер обмена. Вставьте текст в Заметки.'; render(); };
+      const manual = () => { S.note = 'Буфер обмена недоступен: выделите текст в поле и скопируйте вручную.'; render(); };
+      try { navigator.clipboard.writeText(data).then(done, manual); } catch (er) { manual(); }
+      break;
+    }
+    case 'restore': {
+      try {
+        const d = JSON.parse(S.backupText);
+        if (!d || typeof d.prog !== 'object' || Array.isArray(d.prog)) throw new Error('bad');
+        S.prog = d.prog;
+        if (d.stats && typeof d.stats === 'object') { ST = d.stats; ST.days = ST.days || {}; ST.tones = ST.tones || {}; ST.pairs = ST.pairs || {}; }
+        if (d.set && typeof d.set === 'object') { S.set = Object.assign(DEFAULTS(), d.set); S.set.themes = (S.set.themes || []).filter(id => THEME_NAME[id]); if (!S.set.themes.length) S.set.themes = THEMES.map(t => t.id); }
+        save(KEY_PROG, S.prog); save(KEY_STATS, ST); save(KEY_SET, S.set);
+        S.note = 'Восстановлено: ' + Object.keys(S.prog).length + ' ' + plural(Object.keys(S.prog).length, 'слово', 'слова', 'слов') + ' с прогрессом.';
+      } catch (er) { S.note = 'Не удалось прочитать: вставьте в поле весь текст резервной копии.'; }
+      render();
+      break;
+    }
     case 'override': overrideTranslation(); break;
     case 'next': next(); break;
     case 'set': {
@@ -1183,7 +1420,7 @@ document.addEventListener('click', e => {
       });
       break;
     case 'reset':
-      if (S.resetArm) { S.prog = {}; save(KEY_PROG, S.prog); S.resetArm = false; }
+      if (S.resetArm) { S.prog = {}; ST = { days: {}, tones: {}, pairs: {} }; save(KEY_PROG, S.prog); save(KEY_STATS, ST); S.resetArm = false; }
       else S.resetArm = true;
       render(); break;
   }
@@ -1197,6 +1434,7 @@ document.addEventListener('change', e => {
 document.addEventListener('input', e => {
   const t = e.target;
   if (t.dataset.range === 'rate') { const el = document.getElementById('rateval'); if (el) el.textContent = (+t.value).toFixed(2); }
+  if (t.id === 'backup') S.backupText = t.value;
 });
 document.addEventListener('submit', e => {
   const f = e.target.closest('[data-form="typed"]');
@@ -1218,7 +1456,7 @@ document.addEventListener('keydown', e => {
 });
 
 // Доступ для автотестов
-window.__kv = { WORDS, checkPron, checkTyped, checkTranslation, pinyinPlain, numZh, cleanZh, describeSyl, S };
+window.__kv = { WORDS, checkPron, checkTyped, checkTranslation, pinyinPlain, numZh, cleanZh, describeSyl, hardWords, streak, S, get ST() { return ST; } };
 
 render();
 if (window.speechSynthesis) setTimeout(() => { if (S.screen === 'home') render(); }, 700);
