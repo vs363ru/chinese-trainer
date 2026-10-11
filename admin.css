@@ -36,8 +36,10 @@ button:focus-visible, input:focus-visible, a:focus-visible, summary:focus-visibl
 [hidden] { display: none !important; }
 .phone-preview { width: 100%; height: calc(100dvh - 24px); display: flex; flex-direction: column; }
 .phone-heading { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 12px; font-size: 12px; color: #536862; }
+.phone-heading select { max-width: 140px; min-height: 36px; padding: 7px 10px; border: 1px solid #bccfc9; border-radius: 9px; color: #285b50; background: #fff; font: inherit; }
 .phone-space { flex: 1; min-height: 0; display: grid; place-items: center; overflow: hidden; }
+.phone-note { flex: none; margin: 8px 0 0; text-align: center; font-size: 11px; color: #536862; }
 .device-frame { position: relative; flex: none; box-shadow: 0 10px 36px #163e3530; }
-.device-frame iframe { position: absolute; left: 0; top: 0; width: 375px; height: 667px; border: 0; background: #fff; transform-origin: top left; }
+.device-frame iframe { position: absolute; left: 0; top: 0; border: 0; background: #fff; transform-origin: top left; }
 body.previewing { overflow: hidden; }
 @media (max-height: 700px) { .panel { padding: 16px; } h1 { margin-top: 8px; font-size: 22px; } h2 { margin-top: 14px; } .preview { height: 18dvh; } .hint { margin: 6px 0; font-size: 11px; } .status { margin-top: 8px; font-size: 12px; } .owner-heading { margin-top: 10px; margin-bottom: 10px; } .choose { margin-top: 8px; } button, .choose { min-height: 40px; padding: 9px 12px; } .phone-button { min-height: 30px; padding: 6px 10px; } }
