@@ -674,7 +674,7 @@ if (!['after', 'always'].includes(S.set.meaning)) S.set.meaning = 'always';
 if ((S.set.v || 0) < 2) { S.set.meaning = 'always'; S.set.v = 2; save(KEY_SET, S.set); }
 if (S.set.v < 3) { if (!S.set.themes.includes('goods')) S.set.themes.push('goods'); S.set.v = 3; save(KEY_SET, S.set); }
 /* Фото-пазл: один принятый ответ открывает одну часть за уникальное слово. */
-const PUZZLE = { url: '', ratio: 0.75, total: S.set.roundSize, ids: [], opened: new Set(), order: [], viewing: false, note: '' };
+const PUZZLE = { url: '', ratio: 0.75, total: S.set.roundSize, ids: [], opened: new Set(), order: [], viewing: false, photoName: '', note: '' };
 const puzzleRoot = document.createElement('div');
 puzzleRoot.id = 'puzzle-wallpaper';
 puzzleRoot.setAttribute('aria-hidden', 'true');
@@ -719,7 +719,8 @@ async function puzzlePhoto(file, persist) {
   if (PUZZLE.url) URL.revokeObjectURL(PUZZLE.url);
   PUZZLE.url = url;
   PUZZLE.ratio = img.naturalWidth / img.naturalHeight;
-  PUZZLE.note = '';
+  PUZZLE.photoName = file.name || 'фотография';
+  PUZZLE.note = persist ? 'Фотография добавлена. Теперь начните раунд — правильные слова будут открывать пазлы.' : '';
   paintPuzzle(true);
   render();
   if (persist) {
@@ -734,6 +735,7 @@ function startPuzzle() {
   PUZZLE.order = shuffle(Array.from({ length: PUZZLE.total }, (_, i) => i));
   PUZZLE.opened = new Set();
   PUZZLE.viewing = false;
+  PUZZLE.note = '';
   paintPuzzle(true);
 }
 
@@ -803,13 +805,14 @@ function viewPuzzle() {
   let inner = '<div class="puzzle-controls">'
     + '<span role="status">' + (PUZZLE.url ? 'Открыто: <b>' + count + ' из ' + total + '</b>' : 'Правильное слово открывает часть фотографии.') + '</span>';
   if (PUZZLE.url) inner += '<button type="button" class="btn" data-act="puzzle-view"' + (!canView ? ' disabled title="Фон можно посмотреть после ответа"' : '') + '>' + (PUZZLE.viewing ? 'Вернуться к словам' : 'Посмотреть фон') + '</button>';
-  if (S.screen !== 'card') inner += '<label class="btn puzzle-choose">' + (PUZZLE.url ? 'Сменить фото' : 'Выбрать фото') + '<input type="file" id="puzzle-photo" accept="image/*" aria-label="Выбрать фотографию для пазла"></label>'
+  if (S.screen !== 'card') inner += '<label class="btn primary puzzle-choose">' + (PUZZLE.url ? 'Сменить фото' : '＋ Добавить девушку') + '<input type="file" id="puzzle-photo" accept="image/*" aria-label="' + (PUZZLE.url ? 'Сменить фотографию девушки' : 'Добавить девушку: выбрать фотографию') + '"></label>'
     + (PUZZLE.url ? '<button class="btn" data-act="puzzle-remove" type="button">Убрать фото</button>' : '');
   inner += '</div>';
   if (PUZZLE.url) {
     inner += '<div class="puzzle-thumbnail" aria-hidden="true">' + puzzleScene(true) + '</div>';
     if (total && count === total) inner += '<p class="puzzle-complete" role="status">Все ' + total + ' ' + plural(total, 'часть открыта', 'части открыты', 'частей открыты') + '! Фотография собрана.</p>';
-  } else inner += '<p class="muted small" style="margin:0">Выберите фото девушки из галереи. В раунде на 10 слов будет 10 пазлов.</p>';
+  } else inner += '<p class="muted small" style="margin:0">Нажмите «Добавить девушку» и выберите фотографию из галереи. В раунде на 10 слов будет 10 пазлов.</p>';
+  if (PUZZLE.url && S.screen !== 'card') inner += '<p class="muted small puzzle-filename" style="margin:0;overflow-wrap:anywhere">Добавлено: ' + esc(PUZZLE.photoName) + '</p>';
   if (PUZZLE.note) inner += '<p class="note" role="status">' + esc(PUZZLE.note) + '</p>';
   return '<aside class="puzzle-toolbar">' + win('Фото-пазл', inner) + '</aside>';
 }
@@ -839,7 +842,7 @@ window.addEventListener('resize', fitPuzzleView);
 
 async function puzzleRemove() {
   if (PUZZLE.url) URL.revokeObjectURL(PUZZLE.url);
-  PUZZLE.url = ''; PUZZLE.viewing = false; PUZZLE.note = '';
+  PUZZLE.url = ''; PUZZLE.viewing = false; PUZZLE.photoName = ''; PUZZLE.note = '';
   paintPuzzle(true); render();
   try { await puzzleDb('delete'); }
   catch (error) { PUZZLE.note = 'Браузер не разрешил удалить сохранённое фото. Оно может появиться после перезагрузки.'; render(); }
