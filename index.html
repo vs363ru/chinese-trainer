@@ -108,6 +108,9 @@ h2 { margin: 0; font-size: 14px; font-weight: 700; }
 .py { font-family: var(--f-py); font-size: clamp(22px, 6.4vw, 30px); font-weight: 500; letter-spacing: .01em; }
 .s1 { color: var(--t1); } .s2 { color: var(--t2); } .s3 { color: var(--t3); } .s4 { color: var(--t4); } .s0 { color: var(--t0); }
 .meaning { font-size: 24px; font-weight: 700; line-height: 1.25; text-wrap: balance; }
+.mean { width: 100%; margin-top: 6px; padding-top: 8px; border-top: 1px dotted var(--sh); font-size: 24px; font-weight: 700; line-height: 1.25; color: var(--ink); text-wrap: balance; }
+.mean small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 3px; }
+.mean.hid { font-size: 14px; font-weight: 400; font-style: italic; color: var(--sh); }
 .meaning small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 4px; }
 .steps { list-style: none; margin: 0; padding: 3px; display: flex; justify-content: center; flex-wrap: wrap; gap: 2px; background: var(--field); box-shadow: var(--sunk); }
 .steps li { font-size: 13px; padding: 3px 10px; color: var(--muted); }
@@ -631,7 +634,7 @@ function checkTranslation(word, alts, strictHanzi) {
 const KEY_SET = 'kv.settings.v1', KEY_PROG = 'kv.progress.v1', KEY_STATS = 'kv.stats.v1';
 function load(key, def) { try { const v = localStorage.getItem(key); return v ? Object.assign(def, JSON.parse(v)) : def; } catch (e) { return def; } }
 function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* хранилище недоступно */ } }
-const DEFAULTS = () => ({ themes: THEMES.map(t => t.id), roundSize: 10, newPerRound: 4, showHanzi: true, showPinyin: true, rate: 0.8, autoMic: true, autoNext: true, input: 'voice', voiceURI: '', direction: 'mix', beep: false });
+const DEFAULTS = () => ({ themes: THEMES.map(t => t.id), roundSize: 10, newPerRound: 4, showHanzi: true, showPinyin: true, rate: 0.8, autoMic: true, autoNext: true, input: 'voice', voiceURI: '', direction: 'mix', beep: false, meaning: 'after' });
 let ST = load(KEY_STATS, { days: {}, tones: {}, pairs: {} });
 ST.days = ST.days || {}; ST.tones = ST.tones || {}; ST.pairs = ST.pairs || {};
 function dayKey(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
@@ -666,6 +669,7 @@ const S = {
 S.set.themes = S.set.themes.filter(id => THEME_NAME[id]);
 if (!S.set.themes.length) S.set.themes = THEMES.map(t => t.id);
 if (!['mix', 'zh', 'ru'].includes(S.set.direction)) S.set.direction = 'mix';
+if (!['after', 'always'].includes(S.set.meaning)) S.set.meaning = 'after';
 function useVoice() { return !!SR && !S.micBlocked && S.set.input !== 'text'; }
 function P(id) { return S.prog[id] || null; }
 
@@ -1023,10 +1027,27 @@ function advanceAfterPron() {
   later(() => {
     if (S.card !== c) return;
     if (mode === 'intro') { c.phase = 'reveal'; c.reveal = true; render(); return; }
+    // Перевод уже был на экране: спрашивать его бессмысленно
+    if (c.peek || S.set.meaning === 'always') {
+      c.phase = 'result'; c.reveal = true;
+      const ok = !c.peek && c.pron === 'ok';
+      finishCard(ok);
+      if (c.peek) c.fb = { kind: 'info', tag: 'Перевод подсмотрен', lines: ['Слово вернётся в конце раунда, чтобы закрепить.'] };
+      render();
+      if (ok && S.set.autoNext) later(() => { if (S.card === c && c.phase === 'result') next(); }, 2500);
+      return;
+    }
     c.phase = 'translate';
     render();
     if (S.set.autoMic && useVoice()) later(() => { if (S.card === c && !S.listening) startListening(false); }, 450);
   }, 900);
+}
+function peek() {
+  const c = S.card;
+  if (!c || c.peek) return;
+  c.peek = true;
+  if (c.phase === 'translate') { clearTimers(); abortListening(); onTranslate({ level: 'dontknow' }); return; }
+  render();
 }
 function acceptPron() {
   const c = S.card;
@@ -1054,10 +1075,10 @@ function onTranslate(res) {
       : 'Засчитано: «' + esc(res.heard) + '» близко к «' + esc(res.match) + '». Правильно: ' + main] };
     if (!ok) c.fb.lines.push('Произношение ещё нужно подтянуть — слово вернётся в повторение.');
     render();
-    if (S.set.autoNext) { const cc = c; later(() => { if (S.card === cc && S.card.phase === 'result') next(); }, 1600); }
+    if (S.set.autoNext) { const cc = c; later(() => { if (S.card === cc && S.card.phase === 'result') next(); }, 2500); }
     return;
   }
-  if (res.level === 'dontknow') { failTranslation('Правильно: ' + main); return; }
+  if (res.level === 'dontknow') { failTranslation('Правильно: ' + main, true); return; }
   const said = res.level === 'none' ? 'Ничего не распознано.' : 'Вы сказали: «' + esc(res.heard) + '».';
   if (c.tr < 2 && res.level === 'none') {
     c.fb = { kind: 'warn', tag: 'Не расслышал', lines: [said + ' Попробуйте ещё раз.'] };
@@ -1066,11 +1087,11 @@ function onTranslate(res) {
   }
   failTranslation(said + ' Правильно: ' + main);
 }
-function failTranslation(line) {
+function failTranslation(line, noAnswer) {
   const c = S.card;
-  c.phase = 'result'; c.reveal = true; c.trFail = true;
+  c.phase = 'result'; c.reveal = true; c.trFail = !noAnswer;
   finishCard(false);
-  c.fb = { kind: 'bad', tag: 'Перевод: неверно', lines: [line, 'Слово вернётся в конце раунда.'] };
+  c.fb = { kind: 'bad', tag: noAnswer ? 'Перевод' : 'Перевод: неверно', lines: [line, 'Слово вернётся в конце раунда.'] };
   render();
   speak(curWord().h);
 }
@@ -1275,7 +1296,7 @@ function viewHelp() {
     + '<li>Вы повторяете. Она сверяет слоги и тоны и показывает, что прозвучало не так.</li>'
     + '<li>Вы говорите перевод по-русски. Она проверяет его.</li>'
     + '<li>Выученные слова (уровень 3+) идут наоборот: она называет перевод, вы говорите по-китайски.</li></ol>'
-    + '<p class="muted small" style="margin:0">Новое слово сначала показывается с переводом, а спрашивается через пару карточек. Ошибки возвращаются в конце раунда, выученные слова — через 1, 3, 7 и 21 день. Направление можно изменить в настройках.</p></section>'
+    + '<p class="muted small" style="margin:0">У нового слова перевод виден сразу, а спрашивается оно через пару карточек. На повторении перевод скрыт до ответа; если забыли, нажмите «Не помню — показать перевод». Постоянный показ перевода включается в настройках. Ошибки возвращаются в конце раунда, выученные слова — через 1, 3, 7 и 21 день. Направление можно изменить в настройках.</p></section>'
     + '<section class="panel"><h2>Проверка произношения</h2><p class="small" style="margin:0">Проверку делает распознавание речи браузера: оно определяет, какое слово вы сказали, но тон оценивает не так тонко, как преподаватель. Если уверены, что сказали верно, нажмите «Засчитать». Практический смысл проверки: понял бы вас китаец.</p></section>'
     + '<section class="panel"><h2>Где работает голос</h2><ul class="checks">'
     + '<li><span class="dot ok"></span><span>Компьютер и Android — Chrome. iPhone, iPad, Mac — Safari. Нужен интернет.</span></li>'
@@ -1294,7 +1315,11 @@ function viewCard() {
   const saying = c.phase === 'say';
   const showHz = (S.set.showHanzi && !saying) || c.reveal;
   const showPy = (S.set.showPinyin && !saying) || c.reveal;
-  const steps = isRu ? ['Вспомнить', 'Сказать', 'Ответ'] : isIntro ? ['Слушать', 'Повторить', 'Запомнить'] : ['Слушать', 'Повторить', 'Перевести'];
+  const always = S.set.meaning === 'always';
+  // Перевод виден: у новых слов, в обратном режиме (это задание), после ответа, по подсказке или если так выбрано в настройках
+  const showMean = isIntro || saying || c.reveal || c.peek || always;
+  const canPeek = !showMean && !isRu && (c.phase === 'repeat' || c.phase === 'translate');
+  const steps = isRu ? ['Вспомнить', 'Сказать', 'Ответ'] : (isIntro || always) ? ['Слушать', 'Повторить', 'Запомнить'] : ['Слушать', 'Повторить', 'Перевести'];
   const stepIdx = isRu ? (saying ? (c.attempts > 0 || S.listening ? 1 : 0) : 2) : c.phase === 'repeat' ? (S.speaking ? 0 : 1) : 2;
   const stepsHtml = steps.map((s, k) => '<li class="' + (k < stepIdx || c.phase === 'result' ? 'done' : k === stepIdx ? 'on' : '') + '">' + s + '</li>').join('');
   let area = '';
@@ -1315,22 +1340,22 @@ function viewCard() {
       area += '<div class="row"><button class="btn" data-act="retry">' + ICON.play + ' Послушать и повторить</button><button class="btn" data-act="acceptpron">Засчитать</button>'
         + (c.attempts >= 3 ? '<button class="btn primary" data-act="skippron">Дальше</button>' : '') + '</div>';
     }
+    if (canPeek) area += '<div class="row"><button class="btn quiet" data-act="peek">Не помню перевод — показать</button></div>';
   } else if (saying) {
-    area = '<div class="meaning">' + esc(w.r[0]) + '</div>'
-      + '<div class="prompt">' + (voice ? 'Скажите по-китайски' : 'Напишите пиньинем') + '</div>'
+    area = '<div class="prompt">' + (voice ? 'Скажите это по-китайски' : 'Напишите это пиньинем') + '</div>'
       + micBtn('Сказать по-китайски') + typed('Пиньинь: ni3 hao3 или nǐ hǎo')
       + fb
       + '<div class="row">' + (c.attempts > 0 ? '<button class="btn" data-act="acceptpron">Засчитать</button>' : '')
       + '<button class="btn quiet" data-act="reveal">' + (c.attempts > 0 ? 'Показать ответ' : 'Не знаю') + '</button></div>';
   } else if (c.phase === 'reveal') {
-    area = fb + '<div class="meaning">' + esc(w.r[0]) + (w.n ? '<small>' + esc(w.n) + '</small>' : '') + '</div>'
+    area = fb
       + '<p class="muted small" style="margin:0">Запомните перевод — спрошу через пару карточек.</p>'
       + '<div class="row"><button class="btn primary big" data-act="introdone">Запомнил, дальше</button></div>';
   } else if (c.phase === 'translate') {
     area = fb + '<div class="prompt">Как это по-русски?</div>' + micBtn('Сказать перевод') + typed('Перевод по-русски')
-      + '<div class="row"><button class="btn quiet" data-act="dontknow">Не знаю</button></div>';
+      + '<div class="row"><button class="btn" data-act="peek">Не помню — показать перевод</button></div>';
   } else if (c.phase === 'result') {
-    area = '<div class="meaning">' + esc(w.r[0]) + (w.n ? '<small>' + esc(w.n) + '</small>' : '') + '</div>' + fb
+    area = fb
       + '<div class="row">' + (c.trFail ? '<button class="btn" data-act="override">Я сказал верно</button>' : '')
       + '<button class="btn primary" data-act="next">Дальше</button></div>';
   }
@@ -1343,6 +1368,9 @@ function viewCard() {
     + '<button class="word" data-act="play" aria-label="Прослушать слово">'
     + (showHz ? '<span class="hz" lang="zh-CN">' + esc(w.h) + '</span>' : '<span class="hz hidden">· · ·</span>')
     + (showPy ? '<span class="py">' + pinyinHtml(w.s) + '</span>' : '')
+    + (showMean
+      ? '<span class="mean">' + esc(w.r[0]) + (w.n && !saying ? '<small>' + esc(w.n) + '</small>' : '') + '</span>'
+      : '<span class="mean hid">перевод — после вашего ответа</span>')
     + '</button>'
     + (saying
       ? (ruVoice() ? '<div class="row"><button class="btn" data-act="play">' + ICON.play + ' Повторить задание</button></div>' : '')
@@ -1393,6 +1421,8 @@ function viewSettings() {
     + '<p class="muted small" style="margin:0">«Смешанно»: новые слова и слова в работе — слушать и переводить; выученные (уровень 3+) — программа называет перевод, а вы говорите по-китайски.</p></section>'
     + '<section class="panel"><h2>Ответы</h2>' + seg('input', ['voice', 'text'], v => v === 'voice' ? 'Голосом' : 'С клавиатуры')
     + tog('autoMic', 'Микрофон включается сам после слова') + tog('autoNext', 'Переходить дальше после верного ответа') + tog('beep', 'Короткий сигнал, когда микрофон включился') + '</section>'
+    + '<section class="panel"><h2>Перевод на карточке</h2>' + seg('meaning', ['after', 'always'], v => v === 'after' ? 'После ответа' : 'Сразу')
+    + '<p class="muted small" style="margin:0">«После ответа»: на повторении перевод скрыт, пока вы не назовёте его сами, — так слова запоминаются прочнее. «Сразу»: перевод виден всегда, а вопрос о переводе пропускается. У новых слов перевод виден сразу в обоих режимах.</p></section>'
     + '<section class="panel"><h2>Показ</h2>' + tog('showHanzi', 'Показывать иероглифы') + tog('showPinyin', 'Показывать пиньинь')
     + '<p class="muted small" style="margin:0">Без иероглифов и пиньиня — тренировка только на слух.</p></section>'
     + '<section class="panel"><h2>Голос</h2><div class="field"><label for="rate">Скорость речи: <span id="rateval">' + s.rate.toFixed(2) + '</span></label><input id="rate" type="range" min="0.5" max="1.1" step="0.05" value="' + s.rate + '" data-range="rate"></div>'
@@ -1446,6 +1476,7 @@ document.addEventListener('click', e => {
     case 'skippron': skipPron(); break;
     case 'introdone': finishIntro(); break;
     case 'dontknow': abortListening(); onTranslate({ level: 'dontknow' }); break;
+    case 'peek': peek(); break;
     case 'reveal': if (c && c.phase === 'say') { clearTimers(); abortListening(); revealSay(); } break;
     case 'backup': {
       const data = JSON.stringify({ v: 1, at: new Date().toISOString(), prog: S.prog, stats: ST, set: S.set });
