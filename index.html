@@ -305,13 +305,17 @@ body { padding: 0; }
 <body>
 <!-- ARTIFACT:BODY -->
 <div id="app"></div>
-<script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.29.3/dist/index.js"></script>
+<script src="pinyin-pro.js"></script>
 <script>
 (function () {
 'use strict';
 
-// Если основной CDN недоступен, пробуем запасной
-if (!window.pinyinPro) { const s = document.createElement('script'); s.src = 'https://unpkg.com/pinyin-pro@3.29.3/dist/index.js'; document.head.appendChild(s); }
+// Если файл библиотеки рядом со страницей не загрузился, берём её с CDN
+if (!window.pinyinPro) {
+  const urls = ['https://cdn.jsdelivr.net/npm/pinyin-pro@3.29.3/dist/index.js', 'https://unpkg.com/pinyin-pro@3.29.3/dist/index.js'];
+  const load = i => { if (i >= urls.length) return; const s = document.createElement('script'); s.src = urls[i]; s.onerror = () => load(i + 1); document.head.appendChild(s); };
+  load(0);
+}
 
 // Ссылка на полную версию с микрофоном (для встроенного просмотра, где микрофон запрещён)
 const FULL_URL = 'https://vs363ru.github.io/chinese-trainer/';
@@ -706,7 +710,7 @@ function checkTranslation(word, alts, strictHanzi) {
 const KEY_SET = 'kv.settings.v1', KEY_PROG = 'kv.progress.v1', KEY_STATS = 'kv.stats.v1';
 function load(key, def) { try { const v = localStorage.getItem(key); return v ? Object.assign(def, JSON.parse(v)) : def; } catch (e) { return def; } }
 function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* хранилище недоступно */ } }
-const DEFAULTS = () => ({ themes: THEMES.map(t => t.id), roundSize: 10, newPerRound: 4, showHanzi: true, showPinyin: true, rate: 0.8, autoMic: true, autoNext: true, input: 'voice', voiceURI: '', direction: 'mix', beep: false, meaning: 'always' });
+const DEFAULTS = () => ({ themes: THEMES.map(t => t.id), roundSize: 10, newPerRound: 4, showHanzi: true, showPinyin: true, rate: 0.8, autoMic: true, autoNext: true, input: 'voice', voiceURI: '', direction: 'zh', beep: false, meaning: 'always' });
 let ST = load(KEY_STATS, { days: {}, tones: {}, pairs: {} });
 ST.days = ST.days || {}; ST.tones = ST.tones || {}; ST.pairs = ST.pairs || {};
 function dayKey(d) { d = d || new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
@@ -733,6 +737,8 @@ const S = {
   micBlocked: false,
   micOk: false,
   micLog: null,
+  ttsLog: null,
+  ttsError: '',
   micTest: null,
   resetArm: false,
   note: '',
@@ -747,6 +753,8 @@ if (!['after', 'always'].includes(S.set.meaning)) S.set.meaning = 'always';
 // Версия 2: перевод на карточке виден всегда (по просьбе пользователя); прежние настройки переводим один раз
 if ((S.set.v || 0) < 2) { S.set.meaning = 'always'; S.set.v = 2; save(KEY_SET, S.set); }
 if (S.set.v < 3) { if (!S.set.themes.includes('goods')) S.set.themes.push('goods'); S.set.v = 3; save(KEY_SET, S.set); }
+// Версия 4: обратный режим (программа говорит по-русски) путал — по умолчанию все карточки «слушать → повторить»
+if (S.set.v < 4) { S.set.direction = 'zh'; S.set.v = 4; save(KEY_SET, S.set); }
 /* Фото-пазл: один принятый ответ открывает одну часть за уникальное слово. */
 const PUZZLE = { url: '', ratio: .75, total: S.set.roundSize, ids: [], opened: new Set(), order: [], viewing: false };
 const UI_PAGES = {};
@@ -859,12 +867,19 @@ function zhVoices() {
     return (l === 'zh-cn' || l === 'zh' || l.startsWith('zh-hans') || l.startsWith('cmn')) && !/hk|tw|yue/.test(l);
   });
 }
+// Синтетические голоса iOS/macOS (Eloquence и «голоса-игрушки») произносят китайский неестественно
+const NOVELTY_VOICE = /eddy|flo\b|grandma|grandpa|reed|rocko|sandy|shelley|bells|boing|bubbles|cellos|wobble|whisper|zarvox|trinoids|organ|bad news|good news|jester|superstar|bahh|albert|fred|junior|kathy|ralph|бабушк|дедушк/i;
 function pickVoice() {
   const vs = zhVoices();
   if (!vs.length) return null;
+  const real = vs.filter(v => !NOVELTY_VOICE.test(v.name));
+  const good = v => /premium|enhanced|улучш|высок/i.test(v.name + ' ' + v.voiceURI);
   return vs.find(v => v.voiceURI === S.set.voiceURI)
-    || vs.find(v => /google/i.test(v.name))
-    || vs.find(v => /ting|xiaoxiao|yunxi|li-?mu|yu-?shu/i.test(v.name))
+    || real.find(v => /google/i.test(v.name))
+    || real.find(v => good(v) && /ting|li-?mu|yu-?shu|xiaoxiao|yunxi/i.test(v.name))
+    || real.find(v => /ting|li-?mu|yu-?shu|xiaoxiao|yunxi/i.test(v.name))
+    || real.find(good)
+    || real[0]
     || vs[0];
 }
 function ruVoice() {
@@ -873,26 +888,62 @@ function ruVoice() {
   const vs = ss.getVoices().filter(v => /^ru/i.test(v.lang));
   return vs.find(v => /google/i.test(v.name)) || vs[0] || null;
 }
+const TTS_TEXT = {
+  'no-start': 'Браузер не начал озвучку.',
+  'not-allowed': 'Браузер разрешает озвучку только после нажатия на экран.',
+  'audio-busy': 'Звук занят другим приложением.',
+  'audio-hardware': 'Нет устройства вывода звука.',
+  'synthesis-unavailable': 'Голос не загрузился.',
+  'voice-unavailable': 'Выбранный голос недоступен — в настройках выберите «Автовыбор».',
+  'language-unavailable': 'В системе нет китайского голоса.',
+  'synthesis-failed': 'Голос не смог произнести фразу.',
+};
 function speak(text, rate, lang) {
   return new Promise(resolve => {
     const ss = window.speechSynthesis;
     if (!ss || !window.SpeechSynthesisUtterance) { resolve(false); return; }
-    try { ss.cancel(); } catch (e) { /* нет активной речи */ }
-    const u = new SpeechSynthesisUtterance(text);
-    utter = u;
-    u.lang = lang || 'zh-CN';
+    // cancel() прямо перед speak() в Chrome и Safari иногда «съедает» новую фразу — отменяем, только если что-то звучит
+    try { if (ss.speaking || ss.pending) ss.cancel(); } catch (e) { /* нет активной речи */ }
     const v = lang === 'ru-RU' ? ruVoice() : pickVoice();
-    if (v) u.voice = v;
-    u.rate = rate || S.set.rate;
-    let done = false;
+    let u = null, done = false, started = false, code = '';
+    const log = { text, voice: v ? v.name : '(голос по умолчанию для ' + (lang || 'zh-CN') + ')', lang: lang || 'zh-CN', state: 'запуск' };
+    S.ttsLog = log;
+    S.ttsError = '';
     // Отменённая предыдущая фраза не должна сбрасывать флаг текущей
-    const fin = ok => { if (done) return; done = true; clearTimeout(t); if (utter === u) S.speaking = false; resolve(ok); };
-    const t = setTimeout(() => fin(true), 1800 + text.length * 900 / u.rate);
-    u.onend = () => fin(true);
-    u.onerror = () => fin(false);
+    const fin = (ok, why) => {
+      if (done) return; done = true; clearTimeout(t); clearTimeout(t2);
+      if (!code && !started && why === 'timeout') code = 'no-start';
+      log.state = code === 'interrupted' || code === 'canceled' ? 'прервано новой фразой' : code ? (TTS_TEXT[code] ? 'не прозвучало (' + code + ')' : 'ошибка ' + code) : started ? 'прозвучало' : 'не началось';
+      // Итог старой, уже заменённой фразы не трогает состояние новой
+      if (utter === u) {
+        S.speaking = false;
+        if (code && code !== 'interrupted' && code !== 'canceled') S.ttsError = code;
+        else if (started) S.ttsError = '';
+      }
+      resolve(ok);
+    };
+    const make = () => {
+      const x = new SpeechSynthesisUtterance(text);
+      x.lang = lang || 'zh-CN';
+      if (v) x.voice = v;
+      x.rate = rate || S.set.rate;
+      x.onstart = () => { if (u === x) started = true; };
+      x.onend = () => { if (u === x) fin(true); };
+      x.onerror = e => { if (u !== x) return; code = (e && e.error) || 'error'; fin(false); };
+      u = x; utter = x;
+      return x;
+    };
+    const t = setTimeout(() => fin(true, 'timeout'), 2500 + text.length * 900 / (rate || S.set.rate));
+    // Фраза не началась и не стоит в очереди — браузер её потерял: один раз отправляем заново
+    const t2 = setTimeout(() => {
+      try { if (!done && !started && utter === u && !ss.speaking && !ss.pending) ss.speak(make()); } catch (e) { /* без повтора */ }
+    }, 1500);
     S.speaking = true;
-    try { ss.speak(u); } catch (e) { fin(false); }
+    try { ss.speak(make()); } catch (e) { fin(false); }
   });
+}
+function ttsWarn() {
+  return { kind: 'warn', tag: 'Озвучка не сработала', lines: [(TTS_TEXT[S.ttsError] ? TTS_TEXT[S.ttsError] + ' ' : '') + 'Нажмите «Ещё раз». Если звука нет: громкость кнопками сбоку iPhone во время озвучки, переключатель «Без звука», Режим блокировки для этого сайта.', '<span class="muted small">Голос: ' + esc(S.ttsLog ? S.ttsLog.voice : '?') + ', код: ' + esc(S.ttsError) + '</span>'] };
 }
 
 /* ---------- Экран не гаснет во время раунда; сигнал микрофона ---------- */
@@ -1032,13 +1083,15 @@ function insertLater(item, gap) {
   const q = S.round.queue;
   q.splice(Math.min(S.round.idx + gap, q.length), 0, item);
 }
+function isDue(p) { return !p || Date.now() - p.last >= INTERVAL[p.box]; }
 function grade(id, ok) {
   const R = S.round;
   if (!(id in R.first)) {
     R.first[id] = ok;
     R.order.push(id);
     const p = P(id) || { box: 0, last: 0, seen: 0, wrong: 0 };
-    p.box = ok ? Math.min(5, p.box + 1) : 1;
+    // Уровень растёт только на повторении в срок; раннее повторение закрепляет, но не продвигает
+    p.box = ok ? (isDue(P(id)) ? Math.min(5, p.box + 1) : p.box) : 1;
     p.seen++; if (!ok) p.wrong++;
     p.last = Date.now();
     S.prog[id] = p;
@@ -1100,6 +1153,7 @@ function playThenListen(slow) {
     : speak(w.h, slow ? Math.max(0.45, S.set.rate - 0.3) : S.set.rate);
   p.then(() => {
     if (S.card !== c || S.screen !== 'card') return;
+    if (S.ttsError && !c.fb) c.fb = ttsWarn();
     render();
     if (S.set.autoMic && S.micOk && useVoice() && (c.phase === 'repeat' || c.phase === 'translate' || c.phase === 'say')) later(() => { if (S.card === c && !S.listening) startListening(false); }, 350);
   });
@@ -1354,7 +1408,7 @@ function overrideTranslation() {
   if (c.firstGrade) {
     R.first[id] = true;
     const p = P(id);
-    if (p) { p.box = Math.min(5, c.prevBox + 1); p.wrong = Math.max(0, p.wrong - 1); save(KEY_PROG, S.prog); }
+    if (p) { p.box = c.prevDue ? Math.min(5, c.prevBox + 1) : c.prevBox; p.wrong = Math.max(0, p.wrong - 1); save(KEY_PROG, S.prog); }
   }
   R.final[id] = true;
   if (c.requeuedNow) {
@@ -1367,7 +1421,7 @@ function overrideTranslation() {
 function finishCard(ok) {
   const item = curItem(), c = S.card, R = S.round;
   c.firstGrade = item.mode !== 'intro' && !(item.id in R.first);
-  if (c.firstGrade) { const p = P(item.id); c.prevBox = p ? p.box : 0; }
+  if (c.firstGrade) { const p = P(item.id); c.prevBox = p ? p.box : 0; c.prevDue = isDue(p); }
   if (item.mode !== 'intro') grade(item.id, ok);
   if (!ok && !item.requeued) { insertLater({ id: item.id, mode: 'review', requeued: true }, 4); c.requeuedNow = true; }
 }
@@ -1595,6 +1649,8 @@ function viewHome() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (isIOS && (!ttsOk || !SR)) checks.push(['warn', 'Если на iPhone включён Режим блокировки, Safari отключает озвучку и распознавание речи. Выключите его только для этого сайта: меню страницы в адресной строке → «Настройки веб-сайта» → «Режим блокировки» → выкл., затем обновите страницу.']);
   if (S.micTest) checks.push([S.micTest.ok ? 'ok' : 'bad', esc(S.micTest.text)]);
+  if (S.ttsLog) checks.push([/^(прозвучало|прервано)/.test(S.ttsLog.state) ? 'ok' : 'warn', 'Последняя озвучка: «' + esc(S.ttsLog.text) + '» — ' + esc(S.ttsLog.state) + ', голос ' + esc(S.ttsLog.voice)]);
+  checks.push([window.pinyinPro ? 'ok' : 'warn', window.pinyinPro ? 'Разбор пиньиня и тонов работает.' : 'Разбор пиньиня ещё не загрузился: созвучные слова и тоны пока не проверяются. Обновите страницу.']);
   if (S.micLog) checks.push([S.micLog.heard ? 'ok' : 'warn', 'Последняя запись (' + (S.micLog.lang === 'ru-RU' ? 'рус.' : 'кит.') + '): ' + esc(S.micLog.trace.join(' → ')) + (S.micLog.heard ? ' — «' + esc(S.micLog.heard) + '»' : '')]);
   const frameNote = S.inFrame && SR
     ? '<p class="note">Страница открыта во встроенном окне. Здесь браузер может не дать микрофон — тогда ответы вводятся с клавиатуры.' + (FULL_URL ? ' <a href="' + esc(FULL_URL) + '" target="_blank" rel="noopener">Открыть полную версию с голосом</a>' : '') + '</p>'
@@ -1631,7 +1687,7 @@ function viewHelp() {
     + '<li>Программа произносит слово по-китайски.</li>'
     + '<li>Вы повторяете. Она сверяет слоги и тоны и показывает, что прозвучало не так.</li>'
     + '<li>Под словом всегда виден перевод. Если в настройках выбрано «После ответа», программа скрывает перевод и просит назвать его по-русски (кнопка микрофона с надписью «РУС»).</li>'
-    + '<li>Выученные слова (уровень 3+) идут наоборот: она называет перевод, вы говорите по-китайски.</li></ol>'
+    + '<li>По желанию (Настройки → Направление) выученные слова можно проходить наоборот: программа говорит перевод по-русски, вы вспоминаете слово по-китайски.</li></ol>'
     + '<p class="muted small" style="margin:0">Новое слово возвращается через пару карточек для закрепления. Ошибки возвращаются в конце раунда, выученные слова — через 1, 3, 7 и 21 день. Направление можно изменить в настройках.</p></section>'
     + '<section class="panel"><h2>Проверка произношения</h2><p class="small" style="margin:0">Проверку делает распознавание речи браузера: оно определяет, какое слово вы сказали, но тон оценивает не так тонко, как преподаватель. Если уверены, что сказали верно, нажмите «Засчитать». Практический смысл проверки: понял бы вас китаец.</p></section>'
     + '<section class="panel"><h2>Где работает голос</h2><ul class="checks">'
@@ -1751,14 +1807,17 @@ function viewSettings() {
   const seg = (key, vals, fmt) => '<div class="seg">' + vals.map(v => '<button data-act="set" data-key="' + key + '" data-val="' + v + '" aria-pressed="' + (String(s[key]) === String(v)) + '">' + (fmt ? fmt(v) : v) + '</button>').join('') + '</div>';
   const tog = (key, label) => '<label class="tog"><span>' + label + '</span><input type="checkbox" data-tog="' + key + '"' + (s[key] ? ' checked' : '') + '></label>';
   const vs = zhVoices();
+  const autoV = (() => { const keep = s.voiceURI; s.voiceURI = ''; const a = pickVoice(); s.voiceURI = keep; return a; })();
   const voiceSel = vs.length
-    ? '<div class="field"><label for="voice">Голос</label><select id="voice" data-sel="voiceURI"><option value="">Автовыбор</option>' + vs.map(v => '<option value="' + esc(v.voiceURI) + '"' + (v.voiceURI === s.voiceURI ? ' selected' : '') + '>' + esc(v.name) + '</option>').join('') + '</select></div>'
-    : '<p class="muted small" style="margin:0">Китайские голоса в системе не найдены.</p>';
+    ? '<div class="field"><label for="voice">Голос</label><select id="voice" data-sel="voiceURI"><option value="">Автовыбор' + (autoV ? ' (' + esc(autoV.name) + ')' : '') + '</option>' + vs.map(v => '<option value="' + esc(v.voiceURI) + '"' + (v.voiceURI === s.voiceURI ? ' selected' : '') + '>' + esc(v.name) + (NOVELTY_VOICE.test(v.name) ? ' — искажённый' : '') + '</option>').join('') + '</select></div>'
+      + (s.voiceURI && NOVELTY_VOICE.test((vs.find(v => v.voiceURI === s.voiceURI) || {}).name || '') ? '<p class="note">Выбран искажённый синтетический голос: китайский звучит неестественно. Выберите «Автовыбор».</p>' : '')
+    : '<p class="muted small" style="margin:0">Китайские голоса в системе не найдены. На iPhone: Настройки → Универсальный доступ → Устный контент → Голоса → Китайский (материковый).</p>';
+  const ttsNote = S.ttsLog && S.ttsTest ? '<p class="note">Проверка звука: ' + esc(S.ttsLog.state) + ', голос ' + esc(S.ttsLog.voice) + (S.ttsError && TTS_TEXT[S.ttsError] ? '. ' + esc(TTS_TEXT[S.ttsError]) : '') + '</p>' : '';
   return win('Настройки', ''
     + '<section class="panel"><h2>Раунд</h2><span class="lab">Слов за раунд</span>' + seg('roundSize', [6, 10, 15, 20])
     + '<span class="lab">Из них новых</span>' + seg('newPerRound', [2, 4, 6, 8]) + '</section>'
-    + '<section class="panel"><h2>Направление</h2>' + seg('direction', ['mix', 'zh', 'ru'], v => v === 'mix' ? 'Смешанно' : v === 'zh' ? 'Слушать → переводить' : 'Говорить по-китайски')
-    + '<p class="muted small" style="margin:0">«Смешанно»: новые слова и слова в работе — слушать и переводить; выученные (уровень 3+) — программа называет перевод, а вы говорите по-китайски.</p></section>'
+    + '<section class="panel"><h2>Направление</h2>' + seg('direction', ['zh', 'mix', 'ru'], v => v === 'mix' ? 'Смешанно' : v === 'zh' ? 'Слушать и повторять' : 'Говорить по-китайски')
+    + '<p class="muted small" style="margin:0">«Слушать и повторять»: программа всегда произносит слово по-китайски, вы повторяете. «Смешанно»: выученные слова (уровень 3+) идут наоборот — программа говорит перевод по-русски, а вы вспоминаете и говорите слово по-китайски. «Говорить по-китайски»: так все слова.</p></section>'
     + '<section class="panel"><h2>Ответы</h2>' + seg('input', ['voice', 'text'], v => v === 'voice' ? 'Голосом' : 'С клавиатуры')
     + tog('autoMic', 'Микрофон включается сам после слова') + tog('autoNext', 'Переходить дальше после верного ответа') + tog('beep', 'Короткий сигнал, когда микрофон включился') + '</section>'
     + '<section class="panel"><h2>Перевод на карточке</h2>' + seg('meaning', ['always', 'after'], v => v === 'after' ? 'После ответа' : 'Сразу')
@@ -1766,7 +1825,7 @@ function viewSettings() {
     + '<section class="panel"><h2>Показ</h2>' + tog('showHanzi', 'Показывать иероглифы') + tog('showPinyin', 'Показывать пиньинь')
     + '<p class="muted small" style="margin:0">Без иероглифов и пиньиня — тренировка только на слух.</p></section>'
     + '<section class="panel"><h2>Голос</h2><div class="field"><label for="rate">Скорость речи: <span id="rateval">' + s.rate.toFixed(2) + '</span></label><input id="rate" type="range" min="0.5" max="1.1" step="0.05" value="' + s.rate + '" data-range="rate"></div>'
-    + voiceSel + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div></section>'
+    + voiceSel + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="ttstest">' + ICON.play + ' Проверить звук</button></div>' + ttsNote + '</section>'
     + '<section class="panel"><h2>Резервная копия</h2><p class="muted small" style="margin:0">Прогресс хранится в этом браузере. Safari может стереть данные сайта, если неделю им не пользоваться. Скопируйте прогресс в Заметки; чтобы вернуть его или перенести на другое устройство, вставьте текст в поле и нажмите «Восстановить».</p>'
     + '<textarea id="backup" class="ta" rows="3" placeholder="Сюда вставьте сохранённый текст">' + esc(S.backupText) + '</textarea>'
     + '<div class="row" style="justify-content:flex-start"><button class="btn" data-act="backup">Скопировать прогресс</button><button class="btn" data-act="restore">Восстановить</button></div>'
@@ -1851,7 +1910,7 @@ document.addEventListener('click', e => {
       if (k === 'input' && v === 'voice') S.micBlocked = false;
       save(KEY_SET, S.set); render(); break;
     }
-    case 'ttstest': speak('你好，我们开始学习中文吧'); break;
+    case 'ttstest': S.ttsTest = true; speak('你好，我们开始学习中文吧').then(() => { if (S.screen === 'home' || S.screen === 'settings') render(); }); break;
     case 'mictest':
       S.micTest = { ok: true, text: 'Скажите по-русски «привет»…' }; render();
       listen('ru-RU').then(r => {
