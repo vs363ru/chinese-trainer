@@ -1159,19 +1159,29 @@ function startCard() {
   render();
   playThenListen();
 }
+// Медленно — 60% от выбранной скорости, но не медленнее 0,35 (дальше речь искажается)
+function slowRate() { return Math.max(0.35, Number(S.set.rate) * 0.6); }
+// Номер последнего произношения на карточке: «хвосты» прежних фраз не включают микрофон посреди новой
+function newPlay(c) { c.playTok = (c.playTok || 0) + 1; return c.playTok; }
 function playThenListen(slow) {
   const w = curWord();
   const c = S.card;
+  const tok = newPlay(c);
+  const wasListening = !!rec;
   abortListening();
   // В обратном режиме задание — перевод по-русски; китайское слово не озвучиваем до ответа
-  const p = c.phase === 'say'
+  const say = () => c.phase === 'say'
     ? (ruVoice() ? speak(w.r[0], 1, 'ru-RU') : Promise.resolve(false))
-    : speak(w.h, slow ? Math.max(0.45, S.set.rate - 0.3) : S.set.rate);
+    : speak(w.h, slow ? slowRate() : S.set.rate);
+  // Микрофон только что слушал: на iPhone речь сразу после него может не прозвучать — даём ему отпустить звук
+  const p = wasListening
+    ? new Promise(r => setTimeout(r, 300)).then(() => (S.card === c && c.playTok === tok ? say() : false))
+    : say();
   p.then(() => {
-    if (S.card !== c || S.screen !== 'card') return;
+    if (S.card !== c || S.screen !== 'card' || c.playTok !== tok) return;
     if (S.ttsError && !c.fb) c.fb = ttsWarn();
     render();
-    if (S.set.autoMic && S.micOk && useVoice() && (c.phase === 'repeat' || c.phase === 'translate' || c.phase === 'say')) later(() => { if (S.card === c && !S.listening) startListening(false); }, 350);
+    if (S.set.autoMic && S.micOk && useVoice() && (c.phase === 'repeat' || c.phase === 'translate' || c.phase === 'say')) later(() => { if (S.card === c && !S.listening && c.playTok === tok) startListening(false); }, 350);
   });
   render();
 }
@@ -1322,7 +1332,8 @@ function advanceAfterPron() {
 }
 // Программа вслух просит перевод по-русски, затем включает микрофон — чтобы не путать с повтором китайского слова
 function askTranslation(c) {
-  const go = () => { if (S.card === c && c.phase === 'translate' && S.set.autoMic && S.micOk && useVoice() && !S.listening) later(() => { if (S.card === c && !S.listening) startListening(false); }, 250); };
+  const tok = newPlay(c);
+  const go = () => { if (S.card === c && c.playTok === tok && c.phase === 'translate' && S.set.autoMic && S.micOk && useVoice() && !S.listening) later(() => { if (S.card === c && !S.listening && c.playTok === tok) startListening(false); }, 250); };
   if (ruVoice()) speak('А как это по-русски?', 1.05, 'ru-RU').then(go);
   else go();
 }
