@@ -127,6 +127,12 @@ h2 { margin: 0; font-size: 14px; font-weight: 700; }
 .mic.live { color: #C00000; }
 .mic.live::after { content: ""; position: absolute; top: 8px; right: 8px; width: 11px; height: 11px; border-radius: 50%; background: #FF0000; box-shadow: 0 0 5px #FF0000; animation: blink 1s steps(2, start) infinite; }
 .mic:disabled { opacity: .45; cursor: default; }
+/* Микрофон по центру, справа — «Пропустить: знаю слово» */
+.microw { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
+.microw .mic { margin: 0; grid-column: 2; }
+.microw .know { grid-column: 3; justify-self: center; }
+.btn.know { display: inline-grid; justify-items: center; gap: 1px; line-height: 1.15; }
+.btn.know small { font-size: 10px; color: var(--muted); }
 @keyframes blink { to { visibility: hidden; } }
 @media (prefers-reduced-motion: reduce) { .mic.live::after { animation: none; } .bar i { transition: none; } }
 .live { min-height: 22px; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
@@ -709,7 +715,8 @@ function checkTranslation(word, alts, strictHanzi) {
 /* ---------- Хранилище ---------- */
 const KEY_SET = 'kv.settings.v1', KEY_PROG = 'kv.progress.v1', KEY_STATS = 'kv.stats.v1';
 function load(key, def) { try { const v = localStorage.getItem(key); return v ? Object.assign(def, JSON.parse(v)) : def; } catch (e) { return def; } }
-function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { /* хранилище недоступно */ } }
+let saveFailed = false;
+function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) { saveFailed = true; } }
 const DEFAULTS = () => ({ themes: THEMES.map(t => t.id), roundSize: 10, newPerRound: 4, showHanzi: true, showPinyin: true, rate: 0.8, autoMic: true, autoNext: true, input: 'voice', voiceURI: '', direction: 'zh', beep: false, meaning: 'always' });
 let ST = load(KEY_STATS, { days: {}, tones: {}, pairs: {} });
 ST.days = ST.days || {}; ST.tones = ST.tones || {}; ST.pairs = ST.pairs || {};
@@ -1063,12 +1070,15 @@ function buildRound(ids) {
   const reviews = due.slice(0, Math.max(0, N - nNew));
   let news = fresh.slice(0, nNew);
   if (reviews.length + news.length < N) {
-    // Не хватает слов к повторению: добираем давно не повторявшиеся
-    const rest = seen.filter(w => !reviews.includes(w)).sort((a, b) => P(a.id).last - P(b.id).last);
+    // Не хватает слов к повторению: добираем слова в работе (уровень до 2), давно не повторявшиеся.
+    // Выученные (уровень 3+) и отмеченные «Знаю» приходят только в свой срок — не гоняем их по кругу
+    const rest = seen.filter(w => !reviews.includes(w) && P(w.id).box <= 2).sort((a, b) => P(a.id).last - P(b.id).last);
     reviews.push(...rest.slice(0, N - reviews.length - news.length));
   }
   // Изученных слов всё ещё мало (начало обучения): дополняем раунд новыми сверх настройки
   if (reviews.length + news.length < N) news = fresh.slice(0, N - reviews.length);
+  // Всё выучено и сегодня повторять нечего: раунд из давно не повторявшихся, чтобы «Начать» не был пустым
+  if (!reviews.length && !news.length) reviews.push(...seen.slice().sort((a, b) => P(a.id).last - P(b.id).last).slice(0, N));
   shuffle(reviews);
   const queue = [];
   let r = 0, n = 0;
@@ -1341,6 +1351,47 @@ function peek() {
   c.peek = true;
   if (c.phase === 'translate') { clearTimers(); abortListening(); onTranslate({ level: 'dontknow' }); return; }
   render();
+}
+/* «Пропустить — знаю слово»: высший уровень, слово вернётся для проверки через 21 день; можно отменить */
+function knowWord() {
+  const c = S.card, R = S.round;
+  if (!c || c.phase === 'result' || c.phase === 'reveal') return;
+  const id = curItem().id;
+  clearTimers();
+  abortListening();
+  if (S.speaking && window.speechSynthesis) { try { window.speechSynthesis.cancel(); } catch (e) { /* ignore */ } S.speaking = false; }
+  c.undo = { prog: S.prog[id] ? JSON.stringify(S.prog[id]) : '', hadFirst: id in R.first, first: R.first[id], hadFinal: id in R.final, final: R.final[id], order: R.order.slice(), queue: R.queue.slice(), puzzle: PUZZLE.opened.has(id) };
+  const p = S.prog[id] || { box: 0, last: 0, seen: 0, wrong: 0 };
+  p.box = 5; p.seen++; p.last = Date.now();
+  S.prog[id] = p;
+  save(KEY_PROG, S.prog);
+  noteDay();
+  if (!(id in R.first)) { R.first[id] = true; R.order.push(id); }
+  R.final[id] = true;
+  (R.known || (R.known = {}))[id] = true;
+  // Повторы этого слова дальше в раунде больше не нужны
+  for (let i = R.queue.length - 1; i > R.idx; i--) if (R.queue[i].id === id) R.queue.splice(i, 1);
+  openPuzzle(id);
+  c.phase = 'result'; c.reveal = true; c.pron = 'ok'; c.known = true;
+  c.fb = { kind: 'ok', tag: 'Знаю', lines: ['Слово отмечено как выученное и вернётся для проверки через 21 день.'] };
+  render();
+  if (S.set.autoNext) later(() => { if (S.card === c && c.phase === 'result') next(); }, 2500);
+}
+function unknowWord() {
+  const c = S.card, R = S.round;
+  if (!c || !c.undo) return;
+  const u = c.undo, id = curItem().id;
+  if (u.prog) S.prog[id] = JSON.parse(u.prog); else delete S.prog[id];
+  save(KEY_PROG, S.prog);
+  const k = dayKey();
+  if (ST.days[k] > 1) ST.days[k]--; else delete ST.days[k];
+  save(KEY_STATS, ST);
+  if (u.hadFirst) R.first[id] = u.first; else delete R.first[id];
+  if (u.hadFinal) R.final[id] = u.final; else delete R.final[id];
+  R.order = u.order; R.queue = u.queue;
+  if (R.known) delete R.known[id];
+  if (!u.puzzle) { PUZZLE.opened.delete(id); paintPuzzle(); }
+  startCard();
 }
 function acceptPron() {
   const c = S.card;
@@ -1649,6 +1700,10 @@ function viewHome() {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (isIOS && (!ttsOk || !SR)) checks.push(['warn', 'Если на iPhone включён Режим блокировки, Safari отключает озвучку и распознавание речи. Выключите его только для этого сайта: меню страницы в адресной строке → «Настройки веб-сайта» → «Режим блокировки» → выкл., затем обновите страницу.']);
   if (S.micTest) checks.push([S.micTest.ok ? 'ok' : 'bad', esc(S.micTest.text)]);
+  const inMem = Object.keys(S.prog).length;
+  checks.push(saveFailed
+    ? ['bad', 'Прогресс не сохраняется: браузер запретил хранение данных для этой страницы. Откройте её в обычной (не частной) вкладке Safari.']
+    : ['ok', 'Прогресс в памяти этого браузера: ' + inMem + ' ' + plural(inMem, 'слово', 'слова', 'слов') + '. У значка на экране «Домой» и у Safari память отдельная.']);
   if (S.ttsLog) checks.push([/^(прозвучало|прервано)/.test(S.ttsLog.state) ? 'ok' : 'warn', 'Последняя озвучка: «' + esc(S.ttsLog.text) + '» — ' + esc(S.ttsLog.state) + ', голос ' + esc(S.ttsLog.voice)]);
   checks.push([window.pinyinPro ? 'ok' : 'warn', window.pinyinPro ? 'Разбор пиньиня и тонов работает.' : 'Разбор пиньиня ещё не загрузился: созвучные слова и тоны пока не проверяются. Обновите страницу.']);
   if (S.micLog) checks.push([S.micLog.heard ? 'ok' : 'warn', 'Последняя запись (' + (S.micLog.lang === 'ru-RU' ? 'рус.' : 'кит.') + '): ' + esc(S.micLog.trace.join(' → ')) + (S.micLog.heard ? ' — «' + esc(S.micLog.heard) + '»' : '')]);
@@ -1687,6 +1742,7 @@ function viewHelp() {
     + '<li>Программа произносит слово по-китайски.</li>'
     + '<li>Вы повторяете. Она сверяет слоги и тоны и показывает, что прозвучало не так.</li>'
     + '<li>Под словом всегда виден перевод. Если в настройках выбрано «После ответа», программа скрывает перевод и просит назвать его по-русски (кнопка микрофона с надписью «РУС»).</li>'
+    + '<li>Слово уже знаете — нажмите «Пропустить» справа от микрофона. Оно отметится как выученное и вернётся для проверки через 21 день; сразу после нажатия есть «Отменить».</li>'
     + '<li>По желанию (Настройки → Направление) выученные слова можно проходить наоборот: программа говорит перевод по-русски, вы вспоминаете слово по-китайски.</li></ol>'
     + '<p class="muted small" style="margin:0">Новое слово возвращается через пару карточек для закрепления. Ошибки возвращаются в конце раунда, выученные слова — через 1, 3, 7 и 21 день. Направление можно изменить в настройках.</p></section>'
     + '<section class="panel"><h2>Проверка произношения</h2><p class="small" style="margin:0">Проверку делает распознавание речи браузера: оно определяет, какое слово вы сказали, но тон оценивает не так тонко, как преподаватель. Если уверены, что сказали верно, нажмите «Засчитать». Практический смысл проверки: понял бы вас китаец.</p></section>'
@@ -1719,11 +1775,12 @@ function viewCard() {
   const voice = useVoice();
   const ruStep = c.phase === 'translate';
   const langWord = ruStep ? 'по-русски' : 'по-китайски';
+  const knowBtn = '<button class="btn know" data-act="know" aria-label="Пропустить: я знаю это слово"><span>Пропустить</span><small>знаю слово</small></button>';
   const micBtn = (label) => voice
-    ? '<button class="mic ' + (ruStep ? 'ru' : 'zh') + (S.listening ? ' live' : '') + '" data-act="mic" aria-label="' + (S.listening ? 'Остановить запись' : label) + '">' + (S.listening ? ICON.stop : ICON.mic) + '<span class="ml">' + (ruStep ? 'РУС' : '中文') + '</span></button>'
+    ? '<div class="microw"><button class="mic ' + (ruStep ? 'ru' : 'zh') + (S.listening ? ' live' : '') + '" data-act="mic" aria-label="' + (S.listening ? 'Остановить запись' : label) + '">' + (S.listening ? ICON.stop : ICON.mic) + '<span class="ml">' + (ruStep ? 'РУС' : '中文') + '</span></button>' + knowBtn + '</div>'
       + '<div class="live" id="live" aria-live="polite">' + (S.listening ? (c.live ? 'Слышу: ' + esc(c.live) : 'Говорите ' + langWord + '…') : (S.speaking ? 'Слушайте…' : (S.micOk ? 'Нажмите микрофон · ' + langWord : 'Нажмите микрофон · ' + langWord))) + '</div>'
     : '';
-  const typed = (ph) => voice ? '' : '<form class="typed" data-form="typed"><input id="typed" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="' + esc(ph) + '" aria-label="' + esc(ph) + '"><button class="btn primary" type="submit">Проверить</button></form>';
+  const typed = (ph) => voice ? '' : '<form class="typed" data-form="typed"><input id="typed" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="' + esc(ph) + '" aria-label="' + esc(ph) + '"><button class="btn primary" type="submit">Проверить</button></form><div class="row">' + knowBtn + '</div>';
 
   if (c.phase === 'repeat') {
     const passed = c.pron;
@@ -1753,6 +1810,7 @@ function viewCard() {
   } else if (c.phase === 'result') {
     area = fb
       + '<div class="row">' + (c.trFail ? '<button class="btn" data-act="override">Я сказал верно</button>' : '')
+      + (c.known ? '<button class="btn" data-act="unknow">Отменить</button>' : '')
       + '<button class="btn primary" data-act="next">Дальше</button></div>';
   }
 
@@ -1783,7 +1841,7 @@ function viewSummary() {
   const rows = ids.map(id => {
     const w = BY_ID[id];
     return '<button class="li" data-act="say" data-id="' + esc(id) + '"><span class="h" lang="zh-CN">' + esc(w.h) + '</span><span><span class="p">' + pinyinHtml(w.s) + '</span><br><span class="r">' + esc(w.r[0]) + '</span></span>'
-      + (R.first[id] ? '<span class="res ok">верно</span>' : R.final[id] ? '<span class="res ok">со 2-й попытки</span>' : '<span class="res bad">повторить</span>') + '</button>';
+      + (R.known && R.known[id] ? '<span class="res ok">знаю</span>' : R.first[id] ? '<span class="res ok">верно</span>' : R.final[id] ? '<span class="res ok">со 2-й попытки</span>' : '<span class="res bad">повторить</span>') + '</button>';
   }).join('');
   return win('Раунд завершён', '<section class="panel" style="text-align:center"><h2>Результат</h2><div class="score">' + ok + ' из ' + ids.length + '</div><div class="muted small">' + plural(ok, 'слово', 'слова', 'слов') + ' с первого раза · прогресс сохранён</div></section>'
     + '<section class="list" aria-label="Слова раунда">' + rows + '</section>'
@@ -1877,6 +1935,8 @@ document.addEventListener('click', e => {
     case 'retry': if (c) { c.fb = null; playThenListen(true); } break;
     case 'acceptpron': acceptPron(); break;
     case 'skippron': skipPron(); break;
+    case 'know': knowWord(); break;
+    case 'unknow': unknowWord(); break;
     case 'introdone': finishIntro(); break;
     case 'dontknow': abortListening(); onTranslate({ level: 'dontknow' }); break;
     case 'peek': peek(); break;
