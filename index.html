@@ -1132,6 +1132,12 @@ function dueCount() { const now = Date.now(); return WORDS.filter(w => P(w.id) &
 /* ---------- Карточка ---------- */
 let timers = [];
 function later(fn, ms) { timers.push(setTimeout(fn, ms)); }
+// После верного ответа — к следующему слову сами, без нажатий. «Ещё раз» на этом шаге останавливает автопереход
+const AUTO_NEXT_MS = 1000;
+function autoAdvance(c, fn, ms) {
+  if (!S.set.autoNext) return;
+  later(() => { if (S.card === c && !c.hold && (c.phase === 'result' || c.phase === 'reveal')) fn(); }, ms);
+}
 function clearTimers() { timers.forEach(clearTimeout); timers = []; }
 function curItem() { return S.round.queue[S.round.idx]; }
 function curWord() { return BY_ID[curItem().id]; }
@@ -1259,8 +1265,7 @@ function sayOk(res, manual) {
   finishCard(true);
   c.fb = { kind: manual ? 'info' : 'ok', tag: manual ? 'Засчитано вручную' : 'Верно', lines: [(res && res.heard ? 'Распознано: ' + zhSpan(res.heard) + '. ' : '') + zhSpan(w.h) + ' ' + pySpan(w.py)] };
   render();
-  speak(w.h);
-  if (S.set.autoNext) later(() => { if (S.card === c && c.phase === 'result') next(); }, 2400);
+  speak(w.h).then(() => autoAdvance(c, next, 400));
 }
 function onSay(res) {
   const c = S.card, w = curWord();
@@ -1290,20 +1295,26 @@ function advanceAfterPron() {
   const c = S.card;
   if (c.pron === 'ok') openPuzzle(curItem().id);
   const mode = curItem().mode;
+  // Новое слово: перевод и так на экране — сразу «Запомнить», дальше сами через секунду
+  if (mode === 'intro') {
+    c.phase = 'reveal'; c.reveal = true;
+    render();
+    autoAdvance(c, finishIntro, AUTO_NEXT_MS);
+    return;
+  }
+  // Перевод уже был на экране: спрашивать его бессмысленно
+  if (c.peek || S.set.meaning === 'always') {
+    c.phase = 'result'; c.reveal = true;
+    const ok = !c.peek && c.pron === 'ok';
+    finishCard(ok);
+    if (c.peek) c.fb = { kind: 'info', tag: 'Перевод подсмотрен', lines: ['Слово вернётся в конце раунда, чтобы закрепить.'] };
+    render();
+    if (ok) autoAdvance(c, next, AUTO_NEXT_MS);
+    return;
+  }
   render();
   later(() => {
     if (S.card !== c) return;
-    if (mode === 'intro') { c.phase = 'reveal'; c.reveal = true; render(); return; }
-    // Перевод уже был на экране: спрашивать его бессмысленно
-    if (c.peek || S.set.meaning === 'always') {
-      c.phase = 'result'; c.reveal = true;
-      const ok = !c.peek && c.pron === 'ok';
-      finishCard(ok);
-      if (c.peek) c.fb = { kind: 'info', tag: 'Перевод подсмотрен', lines: ['Слово вернётся в конце раунда, чтобы закрепить.'] };
-      render();
-      if (ok && S.set.autoNext) later(() => { if (S.card === c && c.phase === 'result') next(); }, 2500);
-      return;
-    }
     c.phase = 'translate';
     render();
     askTranslation(c);
@@ -1375,7 +1386,7 @@ function knowWord() {
   c.phase = 'result'; c.reveal = true; c.pron = 'ok'; c.known = true;
   c.fb = { kind: 'ok', tag: 'Знаю', lines: ['Слово отмечено как выученное и вернётся для проверки через 21 день.'] };
   render();
-  if (S.set.autoNext) later(() => { if (S.card === c && c.phase === 'result') next(); }, 2500);
+  autoAdvance(c, next, 1500);
 }
 function unknowWord() {
   const c = S.card, R = S.round;
@@ -1419,7 +1430,7 @@ function onTranslate(res) {
       : 'Засчитано: «' + esc(res.heard) + '» близко к «' + esc(res.match) + '». Правильно: ' + main] };
     if (!ok) c.fb.lines.push('Произношение ещё нужно подтянуть — слово вернётся в повторение.');
     render();
-    if (S.set.autoNext) { const cc = c; later(() => { if (S.card === cc && S.card.phase === 'result') next(); }, 2500); }
+    autoAdvance(c, next, ok ? AUTO_NEXT_MS : 2500);
     return;
   }
   if (res.level === 'dontknow') { failTranslation('Правильно: ' + main, true); return; }
@@ -1742,6 +1753,7 @@ function viewHelp() {
     + '<li>Программа произносит слово по-китайски.</li>'
     + '<li>Вы повторяете. Она сверяет слоги и тоны и показывает, что прозвучало не так.</li>'
     + '<li>Под словом всегда виден перевод. Если в настройках выбрано «После ответа», программа скрывает перевод и просит назвать его по-русски (кнопка микрофона с надписью «РУС»).</li>'
+    + '<li>После верного ответа программа сама переходит к следующему слову через секунду (выключается в настройках: «Переходить дальше после верного ответа»).</li>'
     + '<li>Слово уже знаете — нажмите «Пропустить» справа от микрофона. Оно отметится как выученное и вернётся для проверки через 21 день; сразу после нажатия есть «Отменить».</li>'
     + '<li>По желанию (Настройки → Направление) выученные слова можно проходить наоборот: программа говорит перевод по-русски, вы вспоминаете слово по-китайски.</li></ol>'
     + '<p class="muted small" style="margin:0">Новое слово возвращается через пару карточек для закрепления. Ошибки возвращаются в конце раунда, выученные слова — через 1, 3, 7 и 21 день. Направление можно изменить в настройках.</p></section>'
@@ -1800,7 +1812,7 @@ function viewCard() {
       + '<button class="btn quiet" data-act="reveal">' + (c.attempts > 0 ? 'Показать ответ' : 'Не знаю') + '</button></div>';
   } else if (c.phase === 'reveal') {
     area = fb
-      + '<p class="muted small" style="margin:0">Запомните перевод — спрошу через пару карточек.</p>'
+      + '<p class="muted small" style="margin:0">Запомните перевод — спрошу через пару карточек.' + (S.set.autoNext && !c.hold ? ' Дальше — автоматически.' : '') + '</p>'
       + '<div class="row"><button class="btn primary big" data-act="introdone">Запомнил, дальше</button></div>';
   } else if (c.phase === 'translate') {
     area = fb + '<div class="prompt">Теперь переведите: что значит это слово по-русски?</div>'
@@ -1925,8 +1937,11 @@ document.addEventListener('click', e => {
       S.set.themes = t.includes(id) ? (t.length > 1 ? t.filter(x => x !== id) : t) : [...t, id];
       save(KEY_SET, S.set); render(); break;
     }
-    case 'play': if (c) playThenListen(false); break;
-    case 'slow': if (c) playThenListen(true); break;
+    case 'play': case 'slow':
+      if (!c) break;
+      if (c.phase === 'result' || c.phase === 'reveal') { c.hold = true; clearTimers(); }
+      playThenListen(act === 'slow');
+      break;
     case 'say': speak(BY_ID[b.dataset.id].h); break;
     case 'mic':
       if (S.listening) { if (rec) try { rec.stop(); } catch (er) { /* уже остановлено */ } }
