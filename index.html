@@ -623,7 +623,26 @@ function alignSyls(hs, ts) {
   }
   return ts.map((t, j) => ({ want: t, got: hs[j] || null }));
 }
-const RANK = { none: 0, miss: 1, tone: 2, homo: 3, exact: 4 };
+// Варианты ожидаемых слогов: запись словаря и прочтение библиотекой (с сандхи 3+3: 你好 → ni2 hao3)
+function expectedSyls(word) {
+  if (!word.sylLib && window.pinyinPro) { const lib = heardSyls(word.h); if (lib && lib.length === word.syl.length) word.sylLib = lib; }
+  return word.sylLib ? [word.syl, word.sylLib] : [word.syl];
+}
+function findSeqAny(hs, word, withTone) {
+  for (const ts of expectedSyls(word)) { const i = findSeq(hs, ts, withTone); if (i >= 0) return i; }
+  return -1;
+}
+// Распознана только часть длинного слова (多少钱 → 多少): 2 слога из 3 и больше в том же порядке — слово понято
+function partialMatch(hs, word) {
+  const n = word.syl.length;
+  if (n < 3 || !hs || hs.length < 2 || hs.length >= n) return false;
+  const need = Math.ceil(n * 2 / 3);
+  if (hs.length < need) return false;
+  const bases = word.syl.map(x => x.base), got = hs.map(x => x.base);
+  for (let i = 0; i + got.length <= bases.length; i++) if (got.every((b, j) => b === bases[i + j])) return true;
+  return false;
+}
+const RANK = { none: 0, miss: 1, tone: 2, partial: 3, homo: 4, exact: 5 };
 function checkPron(word, alts) {
   let best = { level: 'none', heard: '' };
   for (const raw of alts || []) {
@@ -638,8 +657,9 @@ function checkPron(word, alts) {
     else {
       const hs = heardSyls(zh);
       if (!hs) cand = { level: 'miss', heard: zh, hs: null };
-      else if (findSeq(hs, word.syl, true) >= 0) cand = { level: 'homo', heard: zh, hs };
-      else if (findSeq(hs, word.syl, false) >= 0) cand = { level: 'tone', heard: zh, hs, pos: findSeq(hs, word.syl, false) };
+      else if (findSeqAny(hs, word, true) >= 0) cand = { level: 'homo', heard: zh, hs };
+      else if (findSeqAny(hs, word, false) >= 0) cand = { level: 'tone', heard: zh, hs, pos: findSeqAny(hs, word, false) };
+      else if (partialMatch(hs, word)) cand = { level: 'partial', heard: zh, hs };
       else cand = { level: 'miss', heard: zh, hs };
     }
     if (RANK[cand.level] > RANK[best.level]) best = cand;
@@ -1392,11 +1412,25 @@ function pySpan(t) { return '<span class="pyi">' + esc(t) + '</span>'; }
 function onPron(res) {
   const c = S.card, w = curWord();
   c.attempts++;
-  if (res.level === 'exact' || res.level === 'homo') {
+  if (res.level === 'exact' || res.level === 'homo' || res.level === 'partial') {
     c.pron = 'ok';
     c.fb = { kind: 'ok', tag: 'Произношение: верно', lines: [res.level === 'exact'
       ? 'Распознано: ' + zhSpan(res.heard)
-      : 'Распознано как ' + zhSpan(res.heard) + ' — звучит так же, засчитано.'] };
+      : res.level === 'homo' ? 'Распознано как ' + zhSpan(res.heard) + ' — звучит так же, засчитано.'
+      : 'Распознано ' + zhSpan(res.heard) + ' — большая часть слова, засчитано.'] };
+    advanceAfterPron();
+    return;
+  }
+  if (res.level === 'tone') {
+    // Слоги верные — вас поймут; тон отмечаем как слабое место, но не останавливаем
+    c.pron = 'ok';
+    const al = w.syl.map((t, j) => ({ want: t, got: res.hs[res.pos + j] }));
+    const errs = al.map(x => describeSyl(x.want, x.got)).filter(d => d.bad);
+    const lines = ['Распознано ' + zhSpan(res.heard) + ' (' + pySpan(res.hs.map(sylLabel).join(' ')) + '): слоги верные, тон отличается от ' + pySpan(w.py) + ' — засчитано.'];
+    errs.slice(0, 2).forEach(d => lines.push(esc(d.text)));
+    recordErr(w, res);
+    c.fb = { kind: 'warn', tag: 'Понятно, но проверьте тон', lines };
+    c.toneNote = true;
     advanceAfterPron();
     return;
   }
@@ -1414,7 +1448,7 @@ function onPron(res) {
     }
   }
   recordErr(w, res);
-  c.fb = { kind: res.level === 'tone' ? 'warn' : 'bad', tag: res.level === 'tone' ? 'Проверьте тон' : 'Не совпало', lines };
+  c.fb = { kind: 'bad', tag: 'Не совпало', lines };
   if (c.attempts >= 3) c.fb.lines.push('Три попытки — можно перейти дальше и вернуться к слову позже.');
   render();
 }
@@ -1431,7 +1465,8 @@ function sayOk(res, manual) {
 function onSay(res) {
   const c = S.card, w = curWord();
   c.attempts++;
-  if (res.level === 'exact' || res.level === 'homo') { sayOk(res, false); return; }
+  if (res.level === 'exact' || res.level === 'homo' || res.level === 'partial') { sayOk(res, false); return; }
+  if (res.level === 'tone') { recordErr(w, res); sayOk(res, false); c.fb.kind = 'warn'; c.fb.tag = 'Понятно, но проверьте тон'; c.fb.lines.push('Тон отличается от ' + pySpan(w.py) + '.'); render(); return; }
   const lines = [];
   const hsText = res.hs && res.hs.length ? ' (' + pySpan(res.hs.map(sylLabel).join(' ')) + ')' : '';
   if (res.level === 'none') lines.push('Ничего не распознано. Скажите громче и ближе к микрофону.');
@@ -1440,7 +1475,7 @@ function onSay(res) {
     w.syl.map((t, j) => describeSyl(t, res.hs[res.pos + j])).filter(d => d.bad).slice(0, 2).forEach(d => lines.push(esc(d.text)));
   } else lines.push('Распознано: ' + zhSpan(res.heard) + hsText + '. Это другое слово.');
   recordErr(w, res);
-  c.fb = { kind: res.level === 'tone' ? 'warn' : 'bad', tag: res.level === 'tone' ? 'Проверьте тон' : 'Не совпало', lines };
+  c.fb = { kind: 'bad', tag: 'Не совпало', lines };
   if (c.attempts >= 3) c.fb.lines.push('Три попытки — нажмите «Показать ответ».');
   render();
 }
@@ -1460,7 +1495,7 @@ function advanceAfterPron() {
   if (mode === 'intro') {
     c.phase = 'reveal'; c.reveal = true;
     render();
-    autoAdvance(c, finishIntro, AUTO_NEXT_MS);
+    autoAdvance(c, finishIntro, c.toneNote ? 2200 : AUTO_NEXT_MS);
     return;
   }
   // Перевод уже был на экране: спрашивать его бессмысленно
@@ -1470,7 +1505,7 @@ function advanceAfterPron() {
     finishCard(ok);
     if (c.peek) c.fb = { kind: 'info', tag: 'Перевод подсмотрен', lines: ['Слово вернётся в конце раунда, чтобы закрепить.'] };
     render();
-    if (ok) autoAdvance(c, next, AUTO_NEXT_MS);
+    if (ok) autoAdvance(c, next, c.toneNote ? 2200 : AUTO_NEXT_MS);
     return;
   }
   render();
