@@ -830,6 +830,8 @@ if (S.set.v < 3) { if (!S.set.themes.includes('goods')) S.set.themes.push('goods
 if (S.set.v < 4) { S.set.direction = 'zh'; S.set.v = 4; save(KEY_SET, S.set); }
 // Версия 5: тема «Фразы для торга» и разминка на слух
 if (S.set.v < 5) { if (!S.set.themes.includes('phrase')) S.set.themes.push('phrase'); S.set.warmup = true; S.set.v = 5; save(KEY_SET, S.set); }
+// Версия 6: ввод с клавиатуры убран — тренажёр только для устной речи
+if (S.set.v < 6) { S.set.input = 'voice'; S.set.v = 6; save(KEY_SET, S.set); }
 /* Фото-пазл: один принятый ответ открывает одну часть за уникальное слово. */
 const PUZZLE = { url: '', ratio: .75, total: S.set.roundSize, ids: [], opened: new Set(), order: [], viewing: false };
 const UI_PAGES = {};
@@ -929,7 +931,7 @@ function fitViewport() {
 window.addEventListener('resize', () => { fitViewport(); if (!document.activeElement || !document.activeElement.matches('input, textarea, select')) render(); });
 if (window.visualViewport) window.visualViewport.addEventListener('resize', fitViewport);
 
-function useVoice() { return !!SR && !S.micBlocked && S.set.input !== 'text'; }
+function useVoice() { return !!SR && !S.micBlocked; }
 function P(id) { return S.prog[id] || null; }
 
 /* ---------- Озвучка ---------- */
@@ -1359,10 +1361,9 @@ function startListening(byUser) {
     if (res.error && !res.alts.length) {
       if (res.error === 'not-allowed' || res.error === 'service-not-allowed') {
         if (byUser || S.inFrame) {
+          // Причину и кнопки «Включить микрофон» / «Сказал вслух» показывает сама карточка
           S.micBlocked = true;
-          c.fb = { kind: 'warn', tag: 'Микрофон недоступен', lines: [S.inFrame
-            ? 'В этом встроенном окне браузер не даёт доступ к микрофону. Отвечайте с клавиатуры или откройте полную версию страницы.'
-            : 'Разрешите доступ к микрофону для этой страницы в настройках браузера. Пока отвечайте с клавиатуры.'] };
+          c.fb = null;
         } else {
           c.fb = { kind: 'info', tag: 'Нажмите на микрофон', lines: ['Браузер не включил микрофон сам — нажмите на кнопку.'] };
         }
@@ -1564,6 +1565,16 @@ function unknowWord() {
   if (R.known) delete R.known[id];
   if (!u.puzzle) { PUZZLE.opened.delete(id); paintPuzzle(); }
   startCard();
+}
+// Без микрофона: человек сказал слово вслух сам и отметил это
+function saidAloud() {
+  const c = S.card; if (!c) return;
+  if (c.phase === 'say') { sayOk(null, true); return; }
+  if (c.phase === 'translate') { onTranslate({ level: 'exact', heard: curWord().r[0] }); return; }
+  if (c.phase !== 'repeat' || c.pron) return;
+  c.pron = 'ok';
+  c.fb = { kind: 'info', tag: 'Сказано вслух', lines: ['Микрофон не проверял — засчитано по вашей отметке.'] };
+  advanceAfterPron();
 }
 function acceptPron() {
   const c = S.card;
@@ -1865,9 +1876,8 @@ function viewHome() {
     ? ['bad', 'Озвучка недоступна в этом браузере. Откройте страницу в Safari или Chrome.']
     : v ? ['ok', 'Китайский голос: ' + esc(v.name)]
       : ['warn', 'Китайский голос пока не найден. Обычно он подгружается через пару секунд; если нет — установите голос «Китайский (материковый)» в настройках системы.']);
-  if (!SR) checks.push(['warn', 'Распознавание речи в этом браузере недоступно, ответы вводятся с клавиатуры. Для голоса нужны Chrome (компьютер, Android) или Safari (iPhone, iPad, Mac).']);
-  else if (S.micBlocked) checks.push(['bad', 'Микрофон заблокирован для этой страницы, включён ввод с клавиатуры.']);
-  else if (S.set.input === 'text') checks.push(['warn', 'Включён ввод с клавиатуры. Голос можно вернуть в настройках.']);
+  if (!SR) checks.push(['warn', 'Распознавание речи в этом браузере недоступно. Откройте страницу в Safari (iPhone, iPad, Mac) или Chrome (компьютер, Android).']);
+  else if (S.micBlocked) checks.push(['bad', 'Микрофон заблокирован для этой страницы. Разрешите его: значок слева от адреса → «Настройки веб-сайта» → «Микрофон» → «Разрешить», затем обновите страницу.']);
   else checks.push(['ok', 'Распознавание речи доступно. При первом ответе браузер спросит разрешение на микрофон.']);
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   if (isIOS && (!ttsOk || !SR)) checks.push(['warn', 'Если на iPhone включён Режим блокировки, Safari отключает озвучку и распознавание речи. Выключите его только для этого сайта: меню страницы в адресной строке → «Настройки веб-сайта» → «Режим блокировки» → выкл., затем обновите страницу.']);
@@ -1880,7 +1890,7 @@ function viewHome() {
   checks.push([window.pinyinPro ? 'ok' : 'warn', window.pinyinPro ? 'Разбор пиньиня и тонов работает.' : 'Разбор пиньиня ещё не загрузился: созвучные слова и тоны пока не проверяются. Обновите страницу.']);
   if (S.micLog) checks.push([S.micLog.heard ? 'ok' : 'warn', 'Последняя запись (' + (S.micLog.lang === 'ru-RU' ? 'рус.' : 'кит.') + '): ' + esc(S.micLog.trace.join(' → ')) + (S.micLog.heard ? ' — «' + esc(S.micLog.heard) + '»' : '')]);
   const frameNote = S.inFrame && SR
-    ? '<p class="note">Страница открыта во встроенном окне. Здесь браузер может не дать микрофон — тогда ответы вводятся с клавиатуры.' + (FULL_URL ? ' <a href="' + esc(FULL_URL) + '" target="_blank" rel="noopener">Открыть полную версию с голосом</a>' : '') + '</p>'
+    ? '<p class="note">Страница открыта во встроенном окне. Здесь браузер может не дать микрофон.' + (FULL_URL ? ' <a href="' + esc(FULL_URL) + '" target="_blank" rel="noopener">Открыть полную версию с голосом</a>' : '') + '</p>'
     : '';
   const N = new Set(buildRound().queue.map(q => q.id)).size;
   const due = dueCount(), sk = streak();
@@ -1956,11 +1966,17 @@ function viewCard() {
     ? '<div class="microw"><button class="mic ' + (ruStep ? 'ru' : 'zh') + (S.listening ? ' live' : '') + '" data-act="mic" aria-label="' + (S.listening ? 'Остановить запись' : label) + '">' + (S.listening ? '<span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>' : ICON.mic) + '<span class="ml">' + (ruStep ? 'РУС' : '中文') + '</span></button>' + knowBtn + '</div>'
       + '<div class="live" id="live" aria-live="polite">' + (S.listening ? (c.live ? 'Слышу: ' + esc(c.live) : 'Говорите ' + langWord + '…') : (S.speaking ? 'Слушайте…' : (S.micOk ? 'Нажмите микрофон · ' + langWord : 'Нажмите микрофон · ' + langWord))) + '</div>'
     : '';
-  const typed = (ph) => voice ? '' : '<form class="typed" data-form="typed"><input id="typed" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="' + esc(ph) + '" aria-label="' + esc(ph) + '"><button class="btn primary" type="submit">Проверить</button></form><div class="row">' + knowBtn + '</div>';
+  // Микрофон недоступен: объясняем почему и даём продолжить устно — сказать вслух и отметить
+  const noMicWhy = !SR ? 'Этот браузер не распознаёт речь. Откройте страницу в Safari.'
+    : S.inFrame ? 'В этом окне микрофон недоступен. Откройте полную версию страницы.'
+    : 'Safari не дал доступ к микрофону. Нажмите «Включить микрофон» и разрешите доступ. Если запрос не появляется: значок слева от адреса → «Настройки веб-сайта» → «Микрофон» → «Разрешить».';
+  const typed = () => voice ? '' : '<div class="fb warn"><span class="ico">' + WIN_ICON.warn + '</span><div class="txt"><b class="tag">Микрофон выключен</b><div>' + esc(noMicWhy) + ' Пока произносите слово вслух и нажимайте «Сказал вслух».</div></div></div>'
+    + '<div class="row">' + (SR && !S.inFrame ? '<button class="btn" data-act="micretry">' + ICON.mic + ' Включить микрофон</button>' : '') + '<button class="btn primary" data-act="saidaloud">Сказал вслух — дальше</button></div>'
+    + '<div class="row">' + knowBtn + '</div>';
 
   if (c.phase === 'repeat') {
     const passed = c.pron;
-    area = '<div class="prompt">' + (voice ? 'Повторите за мной' : 'Запишите пиньинем, что услышали') + '</div>'
+    area = '<div class="prompt">Повторите за мной</div>'
       + (passed ? '' : micBtn('Повторить слово') + typed('Пиньинь: ni3 hao3 или nǐ hǎo'))
       + fb;
     if (!passed && c.fb && c.fb.kind !== 'ok' && c.attempts > 0) {
@@ -1969,7 +1985,7 @@ function viewCard() {
     }
     if (canPeek) area += '<div class="row"><button class="btn quiet" data-act="peek">Не помню перевод — показать</button></div>';
   } else if (saying) {
-    area = '<div class="prompt">' + (voice ? 'Скажите это по-китайски' : 'Напишите это пиньинем') + '</div>'
+    area = '<div class="prompt">Скажите это по-китайски</div>'
       + micBtn('Сказать по-китайски') + typed('Пиньинь: ni3 hao3 или nǐ hǎo')
       + fb
       + '<div class="row">' + (c.attempts > 0 ? '<button class="btn" data-act="acceptpron">Засчитать</button>' : '')
@@ -2052,7 +2068,7 @@ function viewSettings() {
     + '<span class="lab">Из них новых</span>' + seg('newPerRound', [2, 4, 6, 8]) + '</section>'
     + '<section class="panel"><h2>Направление</h2>' + seg('direction', ['zh', 'mix', 'ru'], v => v === 'mix' ? 'Смешанно' : v === 'zh' ? 'Слушать и повторять' : 'Говорить по-китайски')
     + '<p class="muted small" style="margin:0">«Слушать и повторять»: программа всегда произносит слово по-китайски, вы повторяете. «Смешанно»: выученные слова (уровень 3+) идут наоборот — программа говорит перевод по-русски, а вы вспоминаете и говорите слово по-китайски. «Говорить по-китайски»: так все слова.</p></section>'
-    + '<section class="panel"><h2>Ответы</h2>' + seg('input', ['voice', 'text'], v => v === 'voice' ? 'Голосом' : 'С клавиатуры')
+    + '<section class="panel"><h2>Ответы</h2>'
     + tog('autoMic', 'Микрофон включается сам после слова') + tog('autoNext', 'Переходить дальше после верного ответа') + tog('beep', 'Короткий сигнал, когда микрофон включился') + tog('warmup', 'Разминка на слух перед раундом (3 вопроса)') + '</section>'
     + '<section class="panel"><h2>Перевод на карточке</h2>' + seg('meaning', ['always', 'after'], v => v === 'after' ? 'После ответа' : 'Сразу')
     + '<p class="muted small" style="margin:0">«Сразу»: перевод виден всегда; вы слушаете и повторяете слово, отдельно называть перевод не нужно. «После ответа»: на повторении перевод скрыт, и после повтора программа просит сказать его по-русски — так слова запоминаются прочнее, но шаг сложнее. У новых слов перевод виден сразу в обоих режимах.</p></section>'
@@ -2118,6 +2134,8 @@ document.addEventListener('click', e => {
     case 'acceptpron': acceptPron(); break;
     case 'skippron': skipPron(); break;
     case 'know': knowWord(); break;
+    case 'saidaloud': saidAloud(); break;
+    case 'micretry': S.micBlocked = false; if (c) { c.fb = null; render(); startListening(true); } else render(); break;
     case 'unknow': unknowWord(); break;
     case 'introdone': finishIntro(); break;
     case 'dontknow': abortListening(); onTranslate({ level: 'dontknow' }); break;
